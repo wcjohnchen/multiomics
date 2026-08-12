@@ -8,35 +8,52 @@ moving to the next. The pipeline is now complete end-to-end: raw data →
 QC/filtering → independent RNA and ADT processing → WNN integration →
 final combined annotation.
 
-See [report.html](report.html) for a browsable dashboard of all 6 final
+📊 **[report.html](report.html)** — browsable dashboard of all 6 final
 figures (sidebar navigation, click-to-zoom), built in the same format
 as `citeseq_final_plots/report.html`.
 
-## Source data
+## Contents
 
-`data/` (inside this project) — Hao et al. 2021 (*Cell*) CITE-seq
-dataset, downloaded from GEO.
+- [1. Data](#1-data)
+- [2. Computational Methods](#2-computational-methods)
+- [3. Environment Setup](#3-environment-setup)
+- [4. Analysis Workflow](#4-analysis-workflow)
+- [5. Running the Analysis Workflow](#5-running-the-analysis-workflow)
+- [6. Directory Structure](#6-directory-structure)
+- [7. Output Files](#7-output-files)
+- [8. Notes](#8-notes)
+- [9. References](#9-references)
+
+
+## 1. Data
+
+**Source:** GEO series [GSE164378](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE164378) — Hao et al. 2021 (*Cell*) CITE-seq dataset <br>
+**Files:** `GSM5008737_RNA_3P-{barcodes,features,matrix}` (RNA: 33,538 genes × 161,764 cells, ~1.05 GB) and `GSM5008738_ADT_3P-{barcodes,features,matrix}` (ADT: 228 antibodies × 161,764 cells, ~100 MB) <br>
+**Design:** 161,764 cells across 13 sequencing lanes in 2 donor pools <br>
 
 **Please manually download the raw data from NCBI GEO series
 [GSE164378](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE164378)
 (samples `GSM5008737` and `GSM5008738`) and place the files in the
 `data/` folder** (created automatically by `01_rna_qc_filter.R` on its
-first run if it doesn't already exist):
-
-- `GSM5008737_RNA_3P-{barcodes,features,matrix}` — RNA: 33,538 genes × 161,764 cells (~1.05 GB matrix)
-- `GSM5008738_ADT_3P-{barcodes,features,matrix}` — ADT: 228 antibodies × 161,764 cells (~100 MB matrix)
+first run if it doesn't already exist).
 
 The same Hao et al. series also has a third accession, `GSM5008739`
 (HTO), for hashtag-based sample demultiplexing — **not downloaded or
 processed here**.
+
+Barcodes carry a lane prefix identifying the 13 sequencing lanes across
+the two donor pools:
+
+- `L_pool`: lanes `L1`–`L5` (67,090 cells)
+- `E2_pool`: lanes `E2L1`–`E2L8` (94,674 cells)
 
 **Is `reference/hto_doublet_calls.csv` actually used? Yes.** It's read
 in `01_rna_qc_filter.R` (Step 7/7, doublet removal) — `hto_source <-
 file.path(project_dir, "reference", "hto_doublet_calls.csv")`, then
 loaded via `read.csv()` and joined onto the working object by barcode.
 Its `Doublet`/`Singlet` calls are unioned with DoubletFinder's own
-per-lane calls to decide which cells get removed (see the pipeline-steps
-table below, step 9).
+per-lane calls to decide which cells get removed (see the pipeline
+tables in "Computational Methods" below, step 9).
 
 **Where that file itself came from — the exact chain, not skipping a
 step:**
@@ -68,59 +85,203 @@ So: `hto_doublet_calls.csv` is a plain CSV, but the file it was
 extracted from was an `.rds`-serialized Seurat object — and that
 object's own `Doublet` calls trace back one further step to the paper's
 `.h5Seurat` reference. One citation covers the whole chain, since every
-step after the raw GEO data is Hao et al.'s own work — see "Citation"
+step after the raw GEO data is Hao et al.'s own work — see "References"
 below.
 
-Not committed to git (see "If publishing this to GitHub" below) — the
-RNA matrix alone exceeds GitHub's 100 MB file limit. Public and
-re-downloadable from GEO accessions `GSM5008737`/`GSM5008738`; place the
-6 files directly under `data/` and every script picks them up
-automatically (`data_dir` is derived from each script's own location,
-same as `project_dir`).
 
-Barcodes carry a lane prefix identifying 13 sequencing lanes across two
-donor pools:
+## 2. Computational Methods
 
-- `L_pool`: lanes `L1`–`L5` (67,090 cells)
-- `E2_pool`: lanes `E2L1`–`E2L8` (94,674 cells)
+`scripts/` contains 5 consolidated files, each covering a logical phase
+of the numbered steps described below (originally built and verified as
+32 separate one-step scripts, then combined — each combine checked to
+produce numerically identical results to running its separate scripts):
 
-## Citation
+| Combined script | Covers steps | Phase |
+|---|---|---|
+| `01_rna_qc_filter.R` | 1–6, 9 | Build Seurat object → RNA QC → filter → doublet removal |
+| `02_adt_qc_filter.R` | 7–8 | ADT QC → filter |
+| `03_rna_umap.R` | 10–17 | RNA normalize → UMAP → cluster → annotate |
+| `04_adt_umap.R` | 18–24 | ADT normalize → UMAP → cluster → annotate |
+| `05_wnn_integration.R` | 25–32 | WNN integrate → UMAP → cluster → annotate (broad + detailed) |
 
-This project processes data and derived annotations from Hao et al.
-2021 — covers both the raw RNA/ADT counts (`GSM5008737`/`GSM5008738`)
-and the HTO-based doublet ground truth in
-`reference/hto_doublet_calls.csv` (see "Source data" above for how
-that file relates to the paper's own supplementary reference release):
+Only each phase's FINAL object is saved as an `.rds` checkpoint; the old
+per-step checkpoints only existed for resuming between separate script
+invocations, which doesn't apply once combined. Each step's own filter
+CSV / figure output is still written individually.
 
-> Hao, Y., Hao, S., Andersen-Nissen, E., Mauck, W. M., Zheng, S.,
-> Butler, A., Lee, M. J., Wilk, A. J., Darby, C., Zager, M., Hoffman,
-> P., Stoeckius, M., Papalexi, E., Mimitou, E. P., Jain, J., Srivastava,
-> A., Stuart, T., Fleming, L. B., Yeung, B., Rogers, A. J., McElrath,
-> M. J., Blish, C. A., Gottardo, R., Smibert, P., & Satija, R. (2021).
-> Integrated analysis of multimodal single-cell data. *Cell*, *184*(13),
-> 3573–3587.e29. https://doi.org/10.1016/j.cell.2021.04.048
+### RNA QC, filtering, doublet removal — `01_rna_qc_filter.R`
 
-```bibtex
-@article{hao2021integrated,
-  title   = {Integrated analysis of multimodal single-cell data},
-  author  = {Hao, Yuhan and Hao, Stephanie and Andersen-Nissen, Erica and Mauck, William M. and Zheng, Shiwei and Butler, Andrew and Lee, Maddie J. and Wilk, Aaron J. and Darby, Charlotte and Zager, Michael and Hoffman, Paul and Stoeckius, Marlon and Papalexi, Efthymia and Mimitou, Eleni P. and Jain, Jaison and Srivastava, Avi and Stuart, Tim and Fleming, Lamar B. and Yeung, Bertrand and Rogers, Angela J. and McElrath, M. Juliana and Blish, Catherine A. and Gottardo, Raphael and Smibert, Peter and Satija, Rahul},
-  journal = {Cell},
-  volume  = {184},
-  number  = {13},
-  pages   = {3573--3587.e29},
-  year    = {2021},
-  doi     = {10.1016/j.cell.2021.04.048}
-}
-```
+| # | Step | Before | After | Removed | Notes |
+|---|---|---|---|---|---|
+| 1 | Build Seurat object (RNA+ADT) | — | 161,764 cells | — | 33,538 genes, 228 antibodies, `lane`/`pool` metadata from barcode prefix |
+| 2 | Cell filter (≥200 genes/cell) | 161,764 | 161,764 | **0** | Non-binding — min `nFeature_RNA` is 501 |
+| 3 | Gene filter (≥100 cells/gene) | 33,538 genes | 17,808 genes | 15,730 genes | Matches `citeseq_learn_v2`'s exact final gene count |
+| 4 | Mito filter (<20% `percent.mt`) | 161,764 | 161,764 | **0** | Non-binding — max is 15.0% |
+| 5 | Quantile trim (2–98%, per pool) | 161,764 | 153,822 | 7,942 | Per-pool percentiles on `nCount_RNA`/`nFeature_RNA`. Checkpoint saved here (unlike steps 2-4) — `02_adt_qc_filter.R` reads it directly |
+| 6 | RNA QC report figure | — | — | — | Raw object, threshold lines; 7-panel |
+| 9 | Doublet removal (DoubletFinder + HTO, union) | 153,822 | **141,852** | 11,970 | `seed=42`. DoubletFinder: 11,537 (per-lane); HTO: 508; overlap: 75. HTO calls read from `reference/hto_doublet_calls.csv` |
 
-The `pbmc_multimodal.h5seurat` reference file itself
-(`https://atlas.fredhutch.org/data/nygc/multimodal/pbmc_multimodal.h5seurat`)
-is this same paper's own official supplementary data release, hosted by
-Fred Hutch/NYGC — also the reference behind Azimuth, Satija Lab's PBMC
-cell-type annotation tool. Not a separate publication, so no second
-citation is needed for it.
+DoubletFinder per-lane breakdown (each lane gets its own PCA and its
+own expected doublet rate — 7.5% of that lane's cell count, `pN=0.25`,
+`pK=0.01` — not a shared global threshold):
 
-## Environment
+| Lane | Cells | Doublets flagged | Singlets |
+|---|---|---|---|
+| E2L1 | 10,895 | 817 | 10,078 |
+| E2L2 | 11,531 | 865 | 10,666 |
+| E2L3 | 10,789 | 809 | 9,980 |
+| E2L4 | 10,867 | 815 | 10,052 |
+| E2L5 | 11,536 | 865 | 10,671 |
+| E2L6 | 11,478 | 861 | 10,617 |
+| E2L7 | 11,448 | 859 | 10,589 |
+| E2L8 | 11,485 | 861 | 10,624 |
+| L1 | 13,135 | 985 | 12,150 |
+| L2 | 12,462 | 935 | 11,527 |
+| L3 | 11,601 | 870 | 10,731 |
+| L4 | 12,721 | 954 | 11,767 |
+| L5 | 13,874 | 1,041 | 12,833 |
+| **Total** | **153,822** | **11,537** | **142,285** |
+
+This 11,537 is unioned with the 508 HTO-based calls (not lane-grouped)
+to reach the final 11,970 doublets removed.
+
+### ADT filtering — `02_adt_qc_filter.R`
+
+| # | Step | Before | After | Removed | Notes |
+|---|---|---|---|---|---|
+| 7 | Antibody filter (≥100 cells/Ab) + cell filter (≥20 counts/cell) | 153,822 | 153,822 | **0** | Both non-binding by a wide margin. This checkpoint is not read by any later step (steps 9 and 18 both branch from earlier files) — kept for its QC figure/filter record only |
+| 8 | ADT QC report figure | — | — | — | Raw object, threshold lines; 6-panel |
+
+### RNA processing (normalization → annotation) — `03_rna_umap.R`
+
+| # | Step | Result |
+|---|---|---|
+| 10 | `LogNormalize`, scale.factor=10000 | 141,852 cells × 17,808 genes |
+| 11 | `FindVariableFeatures`, vst, top 2000 | 2000 HVGs (top: HBB, HBA2, HBA1, CCL4L2, CCL20) |
+| 12 | `ScaleData` + `RunPCA`, 30 PCs, seed=42 | PC1 explains 52.4% of variance |
+| 13 | `RunUMAP` on `pca`, dims 1:30, seed=42 | `umap.rna` embedding (no plot) |
+| 14 | `FindNeighbors`+`FindClusters`, algorithm=3, resolution=0.5, seed=42 | 24 clusters |
+| 15 | `FindAllMarkers`, RNA restricted to 2000 HVGs | 7,446 marker rows |
+| 16 | Manual marker-based annotation | 12 broad categories |
+| 17 | Labeled RNA UMAP plot | `results/03_rna_umap_broad_labels.png` |
+
+RNA broad lineage breakdown (141,852 cells): CD4 T 40,017 · CD8 T 37,669 ·
+Monocyte 44,393 · NK 12,572 · B cell 12,605 · gdT/NK 4,062 · MAIT 4,046 ·
+DC 644 · Proliferating 540 · HSPC 148 · ILC 25 · pDC 15.
+
+Two labels were corrected after cross-checking against the UMAP embedding
+(marker signal alone was ambiguous for both): cluster 15 (`TNF`/`CCL3`/
+`CCL4`/`NFKBIA`) embeds inside the Monocyte island — relabeled Monocyte,
+not "T cell (activated)". Cluster 22 (`KIT`/`GATA3`/`IL1R1`/`SPINK2`)
+embeds within the CD8 T/NK lymphoid branch, far from the true HSPC
+cluster — relabeled ILC, not "HSPC/Basophil".
+
+### ADT processing (normalization → annotation) — `04_adt_umap.R`
+
+| # | Step | Result |
+|---|---|---|
+| 18 | `CLR`, margin=2 | 141,852 cells × 228 antibodies |
+| 19 | `ScaleData` + `RunPCA`, all 228 antibodies, 30 PCs, seed=42 | PC1 explains 30.5% of variance (flatter than RNA's 52.4%) |
+| 20 | `RunUMAP` on `apca`, dims 1:30, seed=42 | `umap.adt` embedding (no plot) |
+| 21 | `FindNeighbors`+`FindClusters`, algorithm=3, resolution=0.5, seed=42 | 29 clusters |
+| 22 | `FindAllMarkers`, all 228 antibodies | 1,290 marker rows |
+| 23 | Manual marker-based annotation | 9 broad categories |
+| 24 | Labeled ADT UMAP plot | `results/04_adt_umap_broad_labels.png` |
+
+ADT broad lineage breakdown (141,852 cells): Monocyte 42,480 · CD4 T
+38,017 · CD8 T 25,003 · NK 16,954 · B cell 12,623 · MAIT 2,614 · DC 2,602 ·
+gdT 1,370 · HSPC 189.
+
+ADT surface-protein markers were more directly interpretable than RNA
+gene markers for several lineages — `TCR-Va7.2` (MAIT), `TCR-Vg9`/
+`TCR-Vd2` (gdT), `CD34`/`CD117`/`CD133` (HSPC), `CD103` (tissue-resident
+CD8 T), and `CD141` (cDC1) are all near-definitive single-protein
+identity markers.
+
+### WNN integration (the combined analysis) — `05_wnn_integration.R`
+
+| # | Step | Result |
+|---|---|---|
+| 25 | `FindMultiModalNeighbors`, `pca`+`apca`, dims 1:30 each, seed=42 | Joint `wknn`/`wsnn` graphs. RNA weight: median 0.55, ranges near-0 to 1.0 per cell |
+| 26 | `RunUMAP` on the WNN graph, seed=42 | `wnn.umap` embedding (no plot) |
+| 27 | `FindClusters` on `wsnn`, algorithm=3, resolution=1.2, seed=42 | 49 clusters (`wnn_clusters`, kept separate from RNA's `seurat_clusters`) |
+| 28 | `FindAllMarkers`, both RNA (2000 HVGs) and ADT (228 antibodies) | 13,194 RNA + 2,155 ADT marker rows |
+| 29 | Manual annotation using RNA+ADT markers together | 13 broad categories |
+| 30 | Labeled WNN UMAP plot (broad) | `results/05_wnn_umap_broad_labels.png` |
+| 31 | Per-cluster detailed annotation, all 49 clusters | `results/05_wnn_detailed_annotation.csv` |
+| 32 | Labeled WNN UMAP plot (detailed, numbered + grouped legend) | `results/05_wnn_umap_detailed_labels.png` |
+
+WNN broad lineage breakdown (141,852 cells): Monocyte 43,419 · CD4 T
+38,068 · CD8 T 25,065 · NK 16,259 · B cell 12,602 · MAIT 2,621 · gdT
+1,350 · DC 986 · Platelet 711 · Proliferating 547 · HSPC 148 · ILC 42 ·
+Erythrocyte 34.
+
+Having both modalities' evidence together at this stage resolved several
+calls neither single-modality analysis could on its own — e.g. cluster
+12's inflammatory-monocyte signature (`TNF`/`CCL3`/`NFKBIA` RNA +
+`CD64`/`CD86`/`CD11b` ADT) is unambiguous here, and clear Platelet
+(`ITGA2B`/`PF4`/`PPBP` + `CD42b`/`CD61`) and CD56bright NK (`XCL1`/`XCL2`
++ `CD56`/`CD117`) populations emerged that neither single-modality pass
+isolated cleanly.
+
+One finding worth noting explicitly: a 34-cell "Erythrocyte" cluster
+embeds spatially *inside* the CD4 T region rather than as its own
+island. Checked directly rather than assumed — its markers show real
+hemoglobin/RBC signal (`HBB`, `HBA1/2`, `CD235a`) *mixed with* CD4 T
+signal (`CD4-2` protein present too), the signature of ambient RNA/
+protein contamination (lysed RBCs releasing free hemoglobin into
+droplets that also contain a real CD4 T cell) rather than a labeling
+error. Kept as its own category, matching the reference paper's own
+convention of reporting a small Erythrocyte class.
+
+### Methodology notes
+
+- **RNA and ADT are normalized independently** (`LogNormalize` vs. `CLR`)
+  since they have fundamentally different statistical properties, then
+  combined via WNN integration (script 25) — not at normalization.
+- **ADT has no HVG-selection-equivalent step.** With only 228 antibodies
+  total — a panel deliberately curated to be informative, unlike RNA's
+  whole transcriptome — all of them are used directly as PCA input.
+- **Doublet detection runs per lane, not per pool or globally.** A doublet
+  physically forms within one droplet-generation run (one lane); pooling
+  by sample-pool (~95k–127k cells) OOM-crashed twice in the reference
+  project — per-lane (~11k–15k cells) is the scale that works.
+- **Both doublet-detection methods are run and cross-checked, not just
+  one.** DoubletFinder and HTO-based calls are structurally blind to
+  different failure modes; they overlap on only 75 of 11,970 flagged
+  cells. Cells are removed if flagged by **either** method — a true
+  union (logical OR), not an intersection:
+  ```r
+  obj$is_doublet <- (obj$doublet_finder_call == "Doublet") |
+                     (!is.na(obj$hto_doublet_call) & obj$hto_doublet_call == "Doublet")
+  ```
+  This choice matters: an intersection (only removing cells both
+  methods agreed on) would have kept 11,895 of the 11,970 flagged cells
+  in the data — union is what actually lets each method catch what the
+  other one structurally can't. HTO-based calls come from
+  `reference/hto_doublet_calls.csv` — a
+  small, portable (~5 MB), git-friendly barcode → Doublet/Singlet
+  lookup, extracted once from a 2 GB intermediate object (this repo
+  doesn't implement its own HTO demultiplexing). See "Data" and
+  "References" above/below for exactly where these calls originate.
+- **Quantile trim is computed per pool**, matching the real, confirmed
+  batch effect between `L_pool`/`E2_pool` (Wilcoxon `p < 2.2e-16`), and
+  must run *after* doublet removal — percentiles are recomputed from
+  whichever cells are currently present.
+- **WNN clustering uses a distinct metadata column** (`wnn_clusters`),
+  not the default `seurat_clusters` — since the same object already
+  carried RNA-only clusters from script 14, letting `FindClusters` use
+  its default column name would have silently overwritten them (same
+  precaution applied to ADT's `adt_clusters` in script 21).
+- **Combined RNA+ADT marker evidence at the WNN stage resolved several
+  calls that were ambiguous with either modality alone** — see the WNN
+  section above. This is the concrete benefit of doing single-modality
+  analysis first and integration second, rather than jumping straight to
+  WNN: it makes the value of integration visible and checkable, not just
+  assumed.
+
+
+## 3. Environment Setup
 
 Conda env `citeseq-pipeline` (R 4.5.3), built package-by-package as each
 step needed something new. Location is whatever `conda`/`mamba` uses by
@@ -232,42 +393,15 @@ runs), so it finishes in under 5 minutes and succeeds cleanly. Confirmed
 by actually hitting this failure, retrying, and verifying `library(Seurat)`
 and `library(DoubletFinder)` both load correctly afterward.
 
-## Reproducibility / seeding
+### Reproducibility / seeding
 
 Single project-wide seed, **42**, used everywhere a seed is needed:
 `set.seed(42)` at the top of scripts with stochastic steps, and
 `seed.use = 42` explicitly passed to any Seurat function that accepts it
 (`RunPCA`, `RunUMAP`, `FindClusters`'s `random.seed`).
 
-## If publishing this to GitHub
 
-**Do not commit `results/*.rds`.** They total ~31 GB, and every single
-one already exceeds GitHub's 100 MB per-file limit on its own (smallest
-is 750 MB) — a plain `git push` would fail outright, and Git/Git-LFS
-aren't built for binaries at this scale regardless. They're also fully
-reproducible: the raw data is public (GEO `GSM5008737`/`GSM5008738`), and
-every `.rds` regenerates by running the 5 consolidated scripts in order
-(`01_rna_qc_filter.R` → `02_adt_qc_filter.R` → `03_rna_umap.R` →
-`04_adt_umap.R` → `05_wnn_integration.R`).
-
-**Do not commit `data/*.gz` either.** The RNA matrix alone is ~1.05 GB
-(over GitHub's 100 MB limit); the ADT matrix is right at the edge
-(~100 MB). Same reasoning as `results/*.rds` — public on GEO, not
-something git should carry.
-
-**Do commit**: all R scripts, `Snakefile`, `README.md`, `report.html`,
-the 6 PNG figures and small CSVs that live together in `results/`
-(funnel counts, marker tables, annotation tables — all well under a MB;
-only the `*.rds` files in that same folder are excluded), `reference/`
-(both files, ~5 MB total), and the `renv` setup (`renv.lock`, `.Rprofile`,
-`renv/activate.R`, `renv/settings.json`, `renv/.gitignore`). Add a
-`.gitignore` with `results/*.rds`, `data/*.gz`, and `.snakemake/`
-(Snakemake's own local run-tracking state, only relevant if you use the
-Snakemake alternative below — regenerates automatically, not portable
-across machines) — `renv/` already has its own nested `.gitignore`
-excluding `renv/library/`, the one part of it that's local-machine-specific.
-
-## Workflow
+## 4. Analysis Workflow
 
 ```mermaid
 flowchart TD
@@ -345,17 +479,39 @@ flowchart TD
     class RNAQC,ADTFILT,RNAPROC,ADTPROC,WNNPROC grp
 ```
 
-## Pipeline steps
 
-Run the whole pipeline end-to-end with `scripts/run_pipeline.sh` — it
-auto-detects whether to use the local conda env or renv (see `renv.lock`
-above; installs packages automatically via `renv::restore()` if needed),
-runs all 5 scripts below in order, logs each one's full output to
-`logs/<timestamp>_<step>.log`, and stops immediately on the first
-failure. Expect ~1.5-2.5 hours total (plus install time on a fresh
+## 5. Running the Analysis Workflow
+
+After completing setup per "Environment Setup" above (raw data already
+in `data/`), the pipeline can be run in two ways.
+
+### A. Manual Execution
+
+Run `scripts/run_pipeline.sh` — it auto-detects whether to use the local
+conda env or renv (installs packages automatically via `renv::restore()`
+if needed), runs all 5 scripts below in order, logs each one's full
+output to `logs/<timestamp>_<step>.log`, and stops immediately on the
+first failure. Expect ~1.5-2.5 hours total (plus install time on a fresh
 clone with no packages yet).
 
-### Alternative: Snakemake
+```bash
+cd multiomics/   # run from the project root
+./scripts/run_pipeline.sh
+```
+
+Or invoke each of the 5 scripts individually, in order:
+
+```bash
+conda activate citeseq-pipeline   # or rely on renv, see Environment Setup
+
+Rscript scripts/01_rna_qc_filter.R
+Rscript scripts/02_adt_qc_filter.R
+Rscript scripts/03_rna_umap.R
+Rscript scripts/04_adt_umap.R
+Rscript scripts/05_wnn_integration.R
+```
+
+### B. Snakemake
 
 `Snakefile` (project root) wraps the same 5 scripts as DAG-tracked
 rules, same pattern as the `RNA-seq` project — `RSCRIPT =
@@ -367,7 +523,19 @@ pipeline. `adt_qc_filter` (step 7-8) is a side-branch — its outputs
 feed nothing downstream, matching the "orphan checkpoint" note above —
 so it's listed explicitly in `rule all` or it wouldn't run at all.
 
+Snakemake requires a separate environment from the R project environment
+managed by `renv`. To create the environment:
+
+```bash
+mamba create -n snakemake_env -c bioconda -c conda-forge \
+  --no-channel-priority snakemake-minimal=9.23.1
 ```
+
+Run from the project root with the `snakemake_env` environment active:
+
+```bash
+conda activate snakemake_env
+
 snakemake -n --cores 1                                   # dry run
 snakemake --cores 1                                       # real run, "Rscript" on PATH (conda env activated first)
 snakemake --cores 2 --config rscript=/path/to/citeseq-pipeline/bin/Rscript
@@ -379,179 +547,30 @@ necessary because Snakemake's shell commands run with cwd = the project
 root, which has `.Rprofile`, so without the explicit `cd`, renv would
 activate on every single rule invocation and (since
 `renv/settings.json`'s `external.libraries` is empty, on purpose — see
-above) hide the conda env's packages entirely. Confirmed by actually
-hitting this exact failure before adding the `cd`. But that same `cd`
-means renv never activates either, so `renv/library/` (where
-`renv::restore()` installs) is never reachable from here — **if you
-used `renv::restore()` instead of conda, use `run_pipeline.sh`, not
-this**; it auto-detects and runs from the project root specifically so
-renv can activate. Raw data must already be in `data/` either way, same
-as `run_pipeline.sh`.
+"Environment Setup" above) hide the conda env's packages entirely.
+Confirmed by actually hitting this exact failure before adding the `cd`.
+But that same `cd` means renv never activates either, so
+`renv/library/` (where `renv::restore()` installs) is never reachable
+from here — **if you used `renv::restore()` instead of conda, use
+`run_pipeline.sh`, not this**; it auto-detects and runs from the project
+root specifically so renv can activate. Raw data must already be in
+`data/` either way, same as `run_pipeline.sh`.
 
 Verified with a real dry-run (correct 5-rule DAG, correct dependency
 ordering, `adt_qc_filter` correctly resolved as a non-blocking
 side-branch), a real incremental-rerun test (touching one script's mtime
 correctly triggered only that rule to re-run, everything else stayed
-marked up to date), and a real full execution of a rule end-to-end
-(`adt_qc_filter`, conda env's R — completed successfully, output values
-matched the already-independently-verified numbers for that script
-exactly: 153,822 cells, 228/228 antibodies kept).
+marked up to date), and a real full execution of the entire DAG
+end-to-end (all 5 rules, conda env's R — completed successfully with 0
+errors, 141,852 cells / 49 WNN clusters / 13 broad lineage categories in
+the final output, matching the already-independently-verified numbers
+throughout this README exactly).
 
-`scripts/` contains 5 consolidated files, each covering a logical phase
-of the numbered steps described below (originally built and verified as
-32 separate one-step scripts, then combined — each combine checked to
-produce numerically identical results to running its separate scripts):
 
-| Combined script | Covers steps | Phase |
-|---|---|---|
-| `01_rna_qc_filter.R` | 1–6, 9 | Build Seurat object → RNA QC → filter → doublet removal |
-| `02_adt_qc_filter.R` | 7–8 | ADT QC → filter |
-| `03_rna_umap.R` | 10–17 | RNA normalize → UMAP → cluster → annotate |
-| `04_adt_umap.R` | 18–24 | ADT normalize → UMAP → cluster → annotate |
-| `05_wnn_integration.R` | 25–32 | WNN integrate → UMAP → cluster → annotate (broad + detailed) |
-
-Only each phase's FINAL object is saved as an `.rds` checkpoint; the old
-per-step checkpoints only existed for resuming between separate script
-invocations, which doesn't apply once combined. Each step's own funnel
-CSV / figure output is still written individually.
-
-### RNA QC, filtering, doublet removal — `01_rna_qc_filter.R`
-
-| # | Step | Before | After | Removed | Notes |
-|---|---|---|---|---|---|
-| 1 | Build Seurat object (RNA+ADT) | — | 161,764 cells | — | 33,538 genes, 228 antibodies, `lane`/`pool` metadata from barcode prefix |
-| 2 | Cell filter (≥200 genes/cell) | 161,764 | 161,764 | **0** | Non-binding — min `nFeature_RNA` is 501 |
-| 3 | Gene filter (≥100 cells/gene) | 33,538 genes | 17,808 genes | 15,730 genes | Matches `citeseq_learn_v2`'s exact final gene count |
-| 4 | Mito filter (<20% `percent.mt`) | 161,764 | 161,764 | **0** | Non-binding — max is 15.0% |
-| 5 | Quantile trim (2–98%, per pool) | 161,764 | 153,822 | 7,942 | Per-pool percentiles on `nCount_RNA`/`nFeature_RNA`. Checkpoint saved here (unlike steps 2-4) — `02_adt_qc_filter.R` reads it directly |
-| 6 | RNA QC report figure | — | — | — | Raw object, threshold lines; 7-panel |
-| 9 | Doublet removal (DoubletFinder + HTO, union) | 153,822 | **141,852** | 11,970 | `seed=42`. DoubletFinder: 11,537 (per-lane); HTO: 508; overlap: 75. HTO calls read from `reference/hto_doublet_calls.csv` |
-
-DoubletFinder per-lane breakdown (each lane gets its own PCA and its
-own expected doublet rate — 7.5% of that lane's cell count, `pN=0.25`,
-`pK=0.01` — not a shared global threshold):
-
-| Lane | Cells | Doublets flagged | Singlets |
-|---|---|---|---|
-| E2L1 | 10,895 | 817 | 10,078 |
-| E2L2 | 11,531 | 865 | 10,666 |
-| E2L3 | 10,789 | 809 | 9,980 |
-| E2L4 | 10,867 | 815 | 10,052 |
-| E2L5 | 11,536 | 865 | 10,671 |
-| E2L6 | 11,478 | 861 | 10,617 |
-| E2L7 | 11,448 | 859 | 10,589 |
-| E2L8 | 11,485 | 861 | 10,624 |
-| L1 | 13,135 | 985 | 12,150 |
-| L2 | 12,462 | 935 | 11,527 |
-| L3 | 11,601 | 870 | 10,731 |
-| L4 | 12,721 | 954 | 11,767 |
-| L5 | 13,874 | 1,041 | 12,833 |
-| **Total** | **153,822** | **11,537** | **142,285** |
-
-This 11,537 is unioned with the 508 HTO-based calls (not lane-grouped)
-to reach the final 11,970 doublets removed.
-
-### ADT filtering — `02_adt_qc_filter.R`
-
-| # | Step | Before | After | Removed | Notes |
-|---|---|---|---|---|---|
-| 7 | Antibody filter (≥100 cells/Ab) + cell filter (≥20 counts/cell) | 153,822 | 153,822 | **0** | Both non-binding by a wide margin. This checkpoint is not read by any later step (steps 9 and 18 both branch from earlier files) — kept for its QC figure/funnel record only |
-| 8 | ADT QC report figure | — | — | — | Raw object, threshold lines; 6-panel |
-
-### RNA processing (normalization → annotation) — `03_rna_umap.R`
-
-| # | Step | Result |
-|---|---|---|
-| 10 | `LogNormalize`, scale.factor=10000 | 141,852 cells × 17,808 genes |
-| 11 | `FindVariableFeatures`, vst, top 2000 | 2000 HVGs (top: HBB, HBA2, HBA1, CCL4L2, CCL20) |
-| 12 | `ScaleData` + `RunPCA`, 30 PCs, seed=42 | PC1 explains 52.4% of variance |
-| 13 | `RunUMAP` on `pca`, dims 1:30, seed=42 | `umap.rna` embedding (no plot) |
-| 14 | `FindNeighbors`+`FindClusters`, algorithm=3, resolution=0.5, seed=42 | 24 clusters |
-| 15 | `FindAllMarkers`, RNA restricted to 2000 HVGs | 7,446 marker rows |
-| 16 | Manual marker-based annotation | 12 broad categories |
-| 17 | Labeled RNA UMAP plot | `results/03_rna_umap_broad_labels.png` |
-
-RNA broad lineage breakdown (141,852 cells): CD4 T 40,017 · CD8 T 37,669 ·
-Monocyte 44,393 · NK 12,572 · B cell 12,605 · gdT/NK 4,062 · MAIT 4,046 ·
-DC 644 · Proliferating 540 · HSPC 148 · ILC 25 · pDC 15.
-
-Two labels were corrected after cross-checking against the UMAP embedding
-(marker signal alone was ambiguous for both): cluster 15 (`TNF`/`CCL3`/
-`CCL4`/`NFKBIA`) embeds inside the Monocyte island — relabeled Monocyte,
-not "T cell (activated)". Cluster 22 (`KIT`/`GATA3`/`IL1R1`/`SPINK2`)
-embeds within the CD8 T/NK lymphoid branch, far from the true HSPC
-cluster — relabeled ILC, not "HSPC/Basophil".
-
-### ADT processing (normalization → annotation) — `04_adt_umap.R`
-
-| # | Step | Result |
-|---|---|---|
-| 18 | `CLR`, margin=2 | 141,852 cells × 228 antibodies |
-| 19 | `ScaleData` + `RunPCA`, all 228 antibodies, 30 PCs, seed=42 | PC1 explains 30.5% of variance (flatter than RNA's 52.4%) |
-| 20 | `RunUMAP` on `apca`, dims 1:30, seed=42 | `umap.adt` embedding (no plot) |
-| 21 | `FindNeighbors`+`FindClusters`, algorithm=3, resolution=0.5, seed=42 | 29 clusters |
-| 22 | `FindAllMarkers`, all 228 antibodies | 1,290 marker rows |
-| 23 | Manual marker-based annotation | 9 broad categories |
-| 24 | Labeled ADT UMAP plot | `results/04_adt_umap_broad_labels.png` |
-
-ADT broad lineage breakdown (141,852 cells): Monocyte 42,480 · CD4 T
-38,017 · CD8 T 25,003 · NK 16,954 · B cell 12,623 · MAIT 2,614 · DC 2,602 ·
-gdT 1,370 · HSPC 189.
-
-ADT surface-protein markers were more directly interpretable than RNA
-gene markers for several lineages — `TCR-Va7.2` (MAIT), `TCR-Vg9`/
-`TCR-Vd2` (gdT), `CD34`/`CD117`/`CD133` (HSPC), `CD103` (tissue-resident
-CD8 T), and `CD141` (cDC1) are all near-definitive single-protein
-identity markers.
-
-### WNN integration (the combined analysis) — `05_wnn_integration.R`
-
-| # | Step | Result |
-|---|---|---|
-| 25 | `FindMultiModalNeighbors`, `pca`+`apca`, dims 1:30 each, seed=42 | Joint `wknn`/`wsnn` graphs. RNA weight: median 0.55, ranges near-0 to 1.0 per cell |
-| 26 | `RunUMAP` on the WNN graph, seed=42 | `wnn.umap` embedding (no plot) |
-| 27 | `FindClusters` on `wsnn`, algorithm=3, resolution=1.2, seed=42 | 49 clusters (`wnn_clusters`, kept separate from RNA's `seurat_clusters`) |
-| 28 | `FindAllMarkers`, both RNA (2000 HVGs) and ADT (228 antibodies) | 13,194 RNA + 2,155 ADT marker rows |
-| 29 | Manual annotation using RNA+ADT markers together | 13 broad categories |
-| 30 | Labeled WNN UMAP plot (broad) | `results/05_wnn_umap_broad_labels.png` |
-| 31 | Per-cluster detailed annotation, all 49 clusters | `results/05_wnn_detailed_annotation.csv` |
-| 32 | Labeled WNN UMAP plot (detailed, numbered + grouped legend) | `results/05_wnn_umap_detailed_labels.png` |
-
-WNN broad lineage breakdown (141,852 cells): Monocyte 43,419 · CD4 T
-38,068 · CD8 T 25,065 · NK 16,259 · B cell 12,602 · MAIT 2,621 · gdT
-1,350 · DC 986 · Platelet 711 · Proliferating 547 · HSPC 148 · ILC 42 ·
-Erythrocyte 34.
-
-Having both modalities' evidence together at this stage resolved several
-calls neither single-modality analysis could on its own — e.g. cluster
-12's inflammatory-monocyte signature (`TNF`/`CCL3`/`NFKBIA` RNA +
-`CD64`/`CD86`/`CD11b` ADT) is unambiguous here, and clear Platelet
-(`ITGA2B`/`PF4`/`PPBP` + `CD42b`/`CD61`) and CD56bright NK (`XCL1`/`XCL2`
-+ `CD56`/`CD117`) populations emerged that neither single-modality pass
-isolated cleanly.
-
-One finding worth noting explicitly: a 34-cell "Erythrocyte" cluster
-embeds spatially *inside* the CD4 T region rather than as its own
-island. Checked directly rather than assumed — its markers show real
-hemoglobin/RBC signal (`HBB`, `HBA1/2`, `CD235a`) *mixed with* CD4 T
-signal (`CD4-2` protein present too), the signature of ambient RNA/
-protein contamination (lysed RBCs releasing free hemoglobin into
-droplets that also contain a real CD4 T cell) rather than a labeling
-error. Kept as its own category, matching the reference paper's own
-convention of reporting a small Erythrocyte class.
-
-## Report
-
-`report.html` — a self-contained dashboard (all 6 figures embedded as
-base64, no external assets) presenting the QC → single-modality → WNN
-integration structure with a sidebar TOC, stat-grid summary, and
-click-to-zoom lightbox, built in the exact format of
-`citeseq_final_plots/report.html`.
-
-## Directory structure
+## 6. Directory Structure
 
 ```
-citeseq_pipeline/
+multiomics/
 ├── README.md
 ├── report.html
 ├── Snakefile                       # alternative to scripts/run_pipeline.sh
@@ -568,38 +587,26 @@ citeseq_pipeline/
 ├── reference/
 │   ├── KEGG_RIBOSOME.txt          # ribosomal gene list, for percent.ribo
 │   └── hto_doublet_calls.csv      # barcode -> HTO-based Doublet/Singlet call (161,764 rows, ~5 MB)
-├── results/                        # figures now save here too, alongside their data (figures/ retired)
+├── results/                        # figures save here too, alongside their data
 │   ├── 01_rna_seurat_object_raw.rds
-│   ├── 02_seurat_object_cell_filter.rds        + 01_rna_qc_filter_cell.csv
-│   ├── 03_seurat_object_gene_filter.rds        + 01_rna_qc_filter_gene.csv
-│   ├── 04_seurat_object_mito_filter.rds        + 01_rna_qc_filter_mito.csv
-│   ├── 01_rna_seurat_object_quantile_trim.rds      + 01_rna_qc_filter_quantile.csv
 │   ├── 01_rna_qc_report_summary.png
-│   ├── 02_adt_seurat_object_filtered.rds       + 02_adt_qc_filter.csv  (orphan checkpoint, see table above)
+│   ├── 01_rna_qc_filter_cell.csv
+│   ├── 01_rna_qc_filter_gene.csv
+│   ├── 01_rna_qc_filter_mito.csv
+│   ├── 01_rna_qc_filter_quantile.csv       + 01_rna_seurat_object_quantile_trim.rds
+│   ├── 01_rna_doublet_summary.csv          + 01_rna_seurat_object_doublet_filtered.rds
+│   ├── 02_adt_qc_filter.csv                + 02_adt_seurat_object_filtered.rds  (orphan checkpoint, see table above)
 │   ├── 02_adt_qc_report_summary.png
-│   ├── 01_rna_seurat_object_doublet_filtered.rds   + 01_rna_doublet_summary.csv
-│   ├── 10_seurat_object_rna_normalized.rds
-│   ├── 11_seurat_object_rna_hvg.rds
-│   ├── 12_seurat_object_rna_pca.rds
-│   ├── 13_seurat_object_rna_umap.rds
-│   ├── 14_seurat_object_rna_clustered.rds
 │   ├── 03_rna_cluster_markers.csv
-│   ├── 03_rna_seurat_object_annotated.rds      + 03_rna_broad_annotation.csv
+│   ├── 03_rna_broad_annotation.csv         + 03_rna_seurat_object_annotated.rds
 │   ├── 03_rna_umap_broad_labels.png
-│   ├── 18_seurat_object_adt_normalized.rds
-│   ├── 19_seurat_object_adt_pca.rds
-│   ├── 20_seurat_object_adt_umap.rds
-│   ├── 21_seurat_object_adt_clustered.rds
 │   ├── 04_adt_cluster_markers.csv
-│   ├── 04_adt_seurat_object_annotated.rds      + 04_adt_broad_annotation.csv
+│   ├── 04_adt_broad_annotation.csv         + 04_adt_seurat_object_annotated.rds
 │   ├── 04_adt_umap_broad_labels.png
-│   ├── 25_seurat_object_wnn.rds
-│   ├── 26_seurat_object_wnn_umap.rds
-│   ├── 27_seurat_object_wnn_clustered.rds
 │   ├── 05_wnn_cluster_markers_RNA.csv + 05_wnn_cluster_markers_ADT.csv
-│   ├── 29_seurat_object_wnn_annotated.rds      + 05_wnn_broad_annotation.csv
+│   ├── 05_wnn_broad_annotation.csv
 │   ├── 05_wnn_umap_broad_labels.png
-│   ├── 05_wnn_seurat_object_detailed.rds         + 05_wnn_detailed_annotation.csv
+│   ├── 05_wnn_detailed_annotation.csv      + 05_wnn_seurat_object_detailed.rds
 │   └── 05_wnn_umap_detailed_labels.png
 └── scripts/
     ├── run_pipeline.sh         (runs all 5 scripts below in order)
@@ -621,48 +628,105 @@ complete WNN integration/clustering/annotation. Everything before it is
 kept for resumability and auditability, not because later steps still
 need it.
 
-## Methodology notes
+### If publishing this to GitHub
 
-- **RNA and ADT are normalized independently** (`LogNormalize` vs. `CLR`)
-  since they have fundamentally different statistical properties, then
-  combined via WNN integration (script 25) — not at normalization.
-- **ADT has no HVG-selection-equivalent step.** With only 228 antibodies
-  total — a panel deliberately curated to be informative, unlike RNA's
-  whole transcriptome — all of them are used directly as PCA input.
-- **Doublet detection runs per lane, not per pool or globally.** A doublet
-  physically forms within one droplet-generation run (one lane); pooling
-  by sample-pool (~95k–127k cells) OOM-crashed twice in the reference
-  project — per-lane (~11k–15k cells) is the scale that works.
-- **Both doublet-detection methods are run and cross-checked, not just
-  one.** DoubletFinder and HTO-based calls are structurally blind to
-  different failure modes; they overlap on only 75 of 11,970 flagged
-  cells. Cells are removed if flagged by **either** method — a true
-  union (logical OR), not an intersection:
-  ```r
-  obj$is_doublet <- (obj$doublet_finder_call == "Doublet") |
-                     (!is.na(obj$hto_doublet_call) & obj$hto_doublet_call == "Doublet")
-  ```
-  This choice matters: an intersection (only removing cells both
-  methods agreed on) would have kept 11,895 of the 11,970 flagged cells
-  in the data — union is what actually lets each method catch what the
-  other one structurally can't. HTO-based calls come from
-  `reference/hto_doublet_calls.csv` — a
-  small, portable (~5 MB), git-friendly barcode → Doublet/Singlet
-  lookup, extracted once from a 2 GB intermediate object (this repo
-  doesn't implement its own HTO demultiplexing). See "Source data" and
-  "Citation" above for exactly where these calls originate.
-- **Quantile trim is computed per pool**, matching the real, confirmed
-  batch effect between `L_pool`/`E2_pool` (Wilcoxon `p < 2.2e-16`), and
-  must run *after* doublet removal — percentiles are recomputed from
-  whichever cells are currently present.
-- **WNN clustering uses a distinct metadata column** (`wnn_clusters`),
-  not the default `seurat_clusters` — since the same object already
-  carried RNA-only clusters from script 14, letting `FindClusters` use
-  its default column name would have silently overwritten them (same
-  precaution applied to ADT's `adt_clusters` in script 21).
-- **Combined RNA+ADT marker evidence at the WNN stage resolved several
-  calls that were ambiguous with either modality alone** — see the WNN
-  section above. This is the concrete benefit of doing single-modality
-  analysis first and integration second, rather than jumping straight to
-  WNN: it makes the value of integration visible and checkable, not just
-  assumed.
+**Do not commit `results/*.rds`.** They total ~31 GB, and every single
+one already exceeds GitHub's 100 MB per-file limit on its own (smallest
+is 750 MB) — a plain `git push` would fail outright, and Git/Git-LFS
+aren't built for binaries at this scale regardless. They're also fully
+reproducible: the raw data is public (GEO `GSM5008737`/`GSM5008738`), and
+every `.rds` regenerates by running the 5 consolidated scripts in order
+(`01_rna_qc_filter.R` → `02_adt_qc_filter.R` → `03_rna_umap.R` →
+`04_adt_umap.R` → `05_wnn_integration.R`).
+
+**Do not commit `data/*.gz` either.** The RNA matrix alone is ~1.05 GB
+(over GitHub's 100 MB limit); the ADT matrix is right at the edge
+(~100 MB). Same reasoning as `results/*.rds` — public on GEO, not
+something git should carry.
+
+**Do commit**: all R scripts, `Snakefile`, `README.md`, `report.html`,
+the 6 PNG figures and small CSVs that live together in `results/`
+(filter counts, marker tables, annotation tables — all well under a MB;
+only the `*.rds` files in that same folder are excluded), `reference/`
+(both files, ~5 MB total), and the `renv` setup (`renv.lock`, `.Rprofile`,
+`renv/activate.R`, `renv/settings.json`, `renv/.gitignore`). Add a
+`.gitignore` with `results/*.rds`, `data/*.gz`, and `.snakemake/`
+(Snakemake's own local run-tracking state, only relevant if you use the
+Snakemake alternative above — regenerates automatically, not portable
+across machines) — `renv/` already has its own nested `.gitignore`
+excluding `renv/library/`, the one part of it that's local-machine-specific.
+
+
+## 7. Output Files
+
+In `results/`, produced by the 5 scripts described in "Computational
+Methods" above:
+
+- **`01_rna_*`** — raw and quantile-trimmed Seurat object checkpoints
+  (`.rds`), the RNA QC report figure, per-filter CSVs (cell/gene/mito/
+  quantile), the doublet-removal summary CSV, and the final
+  doublet-filtered Seurat object.
+- **`02_adt_*`** — the ADT-filtered Seurat object checkpoint, its filter
+  CSV, and the ADT QC report figure.
+- **`03_rna_*`** — RNA cluster markers CSV, broad annotation CSV, the
+  labeled RNA UMAP PNG, and the RNA-annotated Seurat object checkpoint.
+- **`04_adt_*`** — ADT cluster markers CSV, broad annotation CSV, the
+  labeled ADT UMAP PNG, and the ADT-annotated Seurat object checkpoint.
+- **`05_wnn_*`** — RNA and ADT cluster markers CSVs, broad and detailed
+  annotation CSVs, the broad- and detailed-labeled WNN UMAP PNGs, and
+  the final WNN-integrated Seurat object checkpoint (cumulative — see
+  "Directory Structure" above).
+
+`report.html` — a self-contained dashboard (all 6 figures embedded as
+base64, no external assets) presenting the QC → single-modality → WNN
+integration structure with a sidebar TOC, stat-grid summary, and
+click-to-zoom lightbox, built in the exact format of
+`citeseq_final_plots/report.html`.
+
+
+## 8. Notes
+
+Code was developed with assistance from Claude, an AI coding assistant,
+based on author-defined specifications, analytical objectives, and
+methodological decisions. The generated code was iteratively refined,
+reviewed by the author, and validated by re-running the full pipeline
+end-to-end and cross-checking outputs against `citeseq_learn_v2`'s
+independently-established results (e.g. the final RNA gene count and
+per-lane doublet counts described in "Computational Methods" above).
+
+
+## 9. References
+
+This project processes data and derived annotations from Hao et al.
+2021 — covers both the raw RNA/ADT counts (`GSM5008737`/`GSM5008738`)
+and the HTO-based doublet ground truth in
+`reference/hto_doublet_calls.csv` (see "Data" above for how that file
+relates to the paper's own supplementary reference release):
+
+> Hao, Y., Hao, S., Andersen-Nissen, E., Mauck, W. M., Zheng, S.,
+> Butler, A., Lee, M. J., Wilk, A. J., Darby, C., Zager, M., Hoffman,
+> P., Stoeckius, M., Papalexi, E., Mimitou, E. P., Jain, J., Srivastava,
+> A., Stuart, T., Fleming, L. B., Yeung, B., Rogers, A. J., McElrath,
+> M. J., Blish, C. A., Gottardo, R., Smibert, P., & Satija, R. (2021).
+> Integrated analysis of multimodal single-cell data. *Cell*, *184*(13),
+> 3573–3587.e29. https://doi.org/10.1016/j.cell.2021.04.048
+
+```bibtex
+@article{hao2021integrated,
+  title   = {Integrated analysis of multimodal single-cell data},
+  author  = {Hao, Yuhan and Hao, Stephanie and Andersen-Nissen, Erica and Mauck, William M. and Zheng, Shiwei and Butler, Andrew and Lee, Maddie J. and Wilk, Aaron J. and Darby, Charlotte and Zager, Michael and Hoffman, Paul and Stoeckius, Marlon and Papalexi, Efthymia and Mimitou, Eleni P. and Jain, Jaison and Srivastava, Avi and Stuart, Tim and Fleming, Lamar B. and Yeung, Bertrand and Rogers, Angela J. and McElrath, M. Juliana and Blish, Catherine A. and Gottardo, Raphael and Smibert, Peter and Satija, Rahul},
+  journal = {Cell},
+  volume  = {184},
+  number  = {13},
+  pages   = {3573--3587.e29},
+  year    = {2021},
+  doi     = {10.1016/j.cell.2021.04.048}
+}
+```
+
+The `pbmc_multimodal.h5seurat` reference file itself
+(`https://atlas.fredhutch.org/data/nygc/multimodal/pbmc_multimodal.h5seurat`)
+is this same paper's own official supplementary data release, hosted by
+Fred Hutch/NYGC — also the reference behind Azimuth, Satija Lab's PBMC
+cell-type annotation tool. Not a separate publication, so no second
+citation is needed for it.
