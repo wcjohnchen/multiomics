@@ -8,7 +8,7 @@ moving to the next. The pipeline is now complete end-to-end: raw data →
 QC/filtering → independent RNA and ADT processing → WNN integration →
 final combined annotation.
 
-📊 **[CITE-seq Analysis Report](report.html)**
+📊 **[CITE-seq Analysis Report](https://claude.ai/code/artifact/7966cdf7-365d-4a2b-8d4f-81e619d4259e)**
 
 ## Contents
 
