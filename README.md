@@ -8,9 +8,7 @@ moving to the next. The pipeline is now complete end-to-end: raw data →
 QC/filtering → independent RNA and ADT processing → WNN integration →
 final combined annotation.
 
-📊 **[report.html](report.html)** — browsable dashboard of all 6 final
-figures (sidebar navigation, click-to-zoom), built in the same format
-as `citeseq_final_plots/report.html`.
+📊 **[CITE-seq Analysis Report](report.html)**
 
 ## Contents
 
