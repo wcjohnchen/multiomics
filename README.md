@@ -15,7 +15,13 @@ See `report.html` for a browsable dashboard of all 6 final figures
 ## Source data
 
 `data/` (inside this project) — Hao et al. 2021 (*Cell*) CITE-seq
-dataset, downloaded from GEO:
+dataset, downloaded from GEO.
+
+**Please manually download the raw data from NCBI GEO series
+[GSE164378](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE164378)
+(samples `GSM5008737` and `GSM5008738`) and place the files in the
+`data/` folder** (created automatically by `01_rna_qc_filter.R` on its
+first run if it doesn't already exist):
 
 - `GSM5008737_RNA_3P-{barcodes,features,matrix}` — RNA: 33,538 genes × 161,764 cells (~1.05 GB matrix)
 - `GSM5008738_ADT_3P-{barcodes,features,matrix}` — ADT: 228 antibodies × 161,764 cells (~100 MB matrix)
