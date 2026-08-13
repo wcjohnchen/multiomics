@@ -85,11 +85,11 @@ rule rna_qc_filter:
         qc_fig = "results/01_rna_qc_report_summary.png",
         quantile_trim_obj = "results/01_rna_seurat_object_quantile_trim.rds",
         doublet_obj = "results/01_rna_seurat_object_doublet_filtered.rds",
-        cell_funnel = "results/01_rna_qc_filter_cell.csv",
-        gene_funnel = "results/01_rna_qc_filter_gene.csv",
-        mito_funnel = "results/01_rna_qc_filter_mito.csv",
-        quantile_funnel = "results/01_rna_qc_filter_quantile.csv",
-        doublet_funnel = "results/01_rna_doublet_summary.csv"
+        cell_filter = "results/01_rna_qc_filter_cell.csv",
+        gene_filter = "results/01_rna_qc_filter_gene.csv",
+        mito_filter = "results/01_rna_qc_filter_mito.csv",
+        quantile_filter = "results/01_rna_qc_filter_quantile.csv",
+        doublet_summary = "results/01_rna_doublet_summary.csv"
     shell:
         RUN_PREFIX + RSCRIPT + " " + SCRIPT_DIR + "01_rna_qc_filter.R"
 
@@ -101,7 +101,7 @@ rule adt_qc_filter:
     output:
         adt_obj = "results/02_adt_seurat_object_filtered.rds",
         qc_fig = "results/02_adt_qc_report_summary.png",
-        funnel = "results/02_adt_qc_filter.csv"
+        qc_filter = "results/02_adt_qc_filter.csv"
     shell:
         RUN_PREFIX + RSCRIPT + " " + SCRIPT_DIR + "02_adt_qc_filter.R"
 
@@ -138,8 +138,8 @@ rule wnn_integration:
         rna_markers = "results/05_wnn_cluster_markers_RNA.csv",
         adt_markers = "results/05_wnn_cluster_markers_ADT.csv",
         broad_annotation = "results/05_wnn_broad_annotation.csv",
-        finest_annotation = "results/05_wnn_detailed_annotation.csv",
+        detailed_annotation = "results/05_wnn_detailed_annotation.csv",
         broad_fig = "results/05_wnn_umap_broad_labels.png",
-        finest_fig = "results/05_wnn_umap_detailed_labels.png"
+        detailed_fig = "results/05_wnn_umap_detailed_labels.png"
     shell:
         RUN_PREFIX + RSCRIPT + " " + SCRIPT_DIR + "05_wnn_integration.R"
