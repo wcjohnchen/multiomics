@@ -695,36 +695,10 @@ per-lane doublet counts described in "Computational Methods" above).
 
 ## 9. References
 
-This project processes data and derived annotations from Hao et al.
-2021 — covers both the raw RNA/ADT counts (`GSM5008737`/`GSM5008738`)
-and the HTO-based doublet ground truth in
-`reference/hto_doublet_calls.csv` (see "Data" above for how that file
-relates to the paper's own supplementary reference release):
-
-> Hao, Y., Hao, S., Andersen-Nissen, E., Mauck, W. M., Zheng, S.,
-> Butler, A., Lee, M. J., Wilk, A. J., Darby, C., Zager, M., Hoffman,
-> P., Stoeckius, M., Papalexi, E., Mimitou, E. P., Jain, J., Srivastava,
-> A., Stuart, T., Fleming, L. B., Yeung, B., Rogers, A. J., McElrath,
-> M. J., Blish, C. A., Gottardo, R., Smibert, P., & Satija, R. (2021).
-> Integrated analysis of multimodal single-cell data. *Cell*, *184*(13),
-> 3573–3587.e29. https://doi.org/10.1016/j.cell.2021.04.048
-
-```bibtex
-@article{hao2021integrated,
-  title   = {Integrated analysis of multimodal single-cell data},
-  author  = {Hao, Yuhan and Hao, Stephanie and Andersen-Nissen, Erica and Mauck, William M. and Zheng, Shiwei and Butler, Andrew and Lee, Maddie J. and Wilk, Aaron J. and Darby, Charlotte and Zager, Michael and Hoffman, Paul and Stoeckius, Marlon and Papalexi, Efthymia and Mimitou, Eleni P. and Jain, Jaison and Srivastava, Avi and Stuart, Tim and Fleming, Lamar B. and Yeung, Bertrand and Rogers, Angela J. and McElrath, M. Juliana and Blish, Catherine A. and Gottardo, Raphael and Smibert, Peter and Satija, Rahul},
-  journal = {Cell},
-  volume  = {184},
-  number  = {13},
-  pages   = {3573--3587.e29},
-  year    = {2021},
-  doi     = {10.1016/j.cell.2021.04.048}
-}
-```
-
-The `pbmc_multimodal.h5seurat` reference file itself
-(`https://atlas.fredhutch.org/data/nygc/multimodal/pbmc_multimodal.h5seurat`)
-is this same paper's own official supplementary data release, hosted by
-Fred Hutch/NYGC — also the reference behind Azimuth, Satija Lab's PBMC
-cell-type annotation tool. Not a separate publication, so no second
-citation is needed for it.
+Hao, Y., Hao, S., Andersen-Nissen, E., Mauck, W. M., Zheng, S., Butler,
+A., Lee, M. J., Wilk, A. J., Darby, C., Zager, M., Hoffman, P.,
+Stoeckius, M., Papalexi, E., Mimitou, E. P., Jain, J., Srivastava, A.,
+Stuart, T., Fleming, L. B., Yeung, B., Rogers, A. J., McElrath, M. J.,
+Blish, C. A., Gottardo, R., Smibert, P., & Satija, R. (2021). Integrated
+analysis of multimodal single-cell data. *Cell*, *184*(13), 3573–3587.e29.
+https://doi.org/10.1016/j.cell.2021.04.048
