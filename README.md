@@ -218,80 +218,41 @@ Key package versions:
 
 ## 4. Analysis Workflow
 
-```mermaid
-flowchart TD
-    RAW(("Raw data\n161,764 cells\n33,538 genes · 228 antibodies"))
-
-    subgraph RNAQC[" RNA QC / filtering "]
-        direction LR
-        S2["Cell filter\n≥200 genes/cell"]
-        S3["Gene filter\n≥100 cells/gene"]
-        S4["Mito filter\n<20% percent.mt"]
-        S5["Quantile trim\n2-98%, per pool"]
-        S9["Doublet removal\nDoubletFinder + HTO, per-lane\nseed=42"]
-    end
-
-    subgraph ADTFILT[" ADT filtering "]
-        direction LR
-        S7a["Antibody filter\n≥100 cells/antibody"]
-        S7b["Cell filter\n≥20 antibody counts/cell"]
-    end
-
-    FILTERED(("141,852 cells\n17,808 genes · 228 antibodies"))
-
-    subgraph RNAPROC[" RNA processing "]
-        direction LR
-        S10["LogNormalize"]
-        S11["HVG: top 2000"]
-        S12["Scale + PCA\n30 PCs"]
-        S13["UMAP"]
-        S14["Cluster: 24"]
-        S16["Annotate: 11 cat."]
-    end
-
-    subgraph ADTPROC[" ADT processing "]
-        direction LR
-        S18["CLR normalize"]
-        S19["Scale + PCA\n30 PCs, all 228 Ab"]
-        S20["UMAP"]
-        S21["Cluster: 29"]
-        S23["Annotate: 9 cat."]
-    end
-
-    subgraph WNNPROC[" WNN integration "]
-        direction LR
-        S25["FindMultiModalNeighbors\npca + apca, seed=42"]
-        S26["UMAP\nwnn.umap"]
-        S27["Cluster: 49"]
-        S29["Annotate: 13 broad"]
-        S31["Annotate: 49 detailed"]
-    end
-
-    FIGS(("6 final figures\nreport.html"))
-
-    RAW --> S2 --> S3 --> S4 --> S5 --> S9 --> FILTERED
-    S5 --> S7a --> S7b
-    FILTERED --> S10 --> S11 --> S12 --> S13 --> S14 --> S16
-    FILTERED --> S18 --> S19 --> S20 --> S21 --> S23
-    S16 --> S25
-    S23 --> S25
-    S25 --> S26 --> S27 --> S29 --> S31
-    S16 --> FIGS
-    S23 --> FIGS
-    S29 --> FIGS
-    S31 --> FIGS
-
-    classDef anchor fill:#0E7C86,stroke:#06393F,color:#ffffff,stroke-width:2px,font-weight:bold;
-    classDef rna fill:#E7EEF6,stroke:#3E6C9C,color:#12181A,stroke-width:1.5px;
-    classDef adt fill:#FBEAE0,stroke:#C1622D,color:#12181A,stroke-width:1.5px;
-    classDef int fill:#ECEEF6,stroke:#5C6E9C,color:#12181A,stroke-width:1.5px;
-    classDef grp fill:transparent,stroke:#D2DBD8,color:#7C8C8A,stroke-dasharray: 2 2;
-
-    class RAW,FILTERED,FIGS anchor
-    class S2,S3,S4,S5,S9,S10,S11,S12,S13,S14,S16 rna
-    class S7a,S7b,S18,S19,S20,S21,S23 adt
-    class S25,S26,S27,S29,S31 int
-    class RNAQC,ADTFILT,RNAPROC,ADTPROC,WNNPROC grp
+```
+Raw Data
+(161,764 cells, 33,538 genes · 228 antibodies)
+        │
+        ▼
+RNA QC / Filtering
+(Cell filter, gene filter, mito filter,
+ quantile trim, doublet removal -- seed=42)
+        │
+        ├──────────────────────────────┐
+        │                              │
+        ▼                              ▼
+141,852 cells                   ADT Filtering
+17,808 genes · 228 antibodies   (Antibody filter, cell filter --
+        │                        side-branch, feeds nothing downstream)
+        │
+        ├──────────────────────────────┐
+        │                              │
+        ▼                              ▼
+RNA Processing                  ADT Processing
+(LogNormalize, HVG,             (CLR normalize, scale + PCA,
+ scale + PCA, UMAP,              UMAP, cluster: 29,
+ cluster: 24, annotate: 12)      annotate: 9)
+        │                              │
+        └──────────────┬───────────────┘
+                        │
+                        ▼
+              WNN Integration
+    (FindMultiModalNeighbors, UMAP,
+     cluster: 49, annotate: 13 broad
+     + 49 detailed)
+                        │
+                        ▼
+              6 Final Figures
+                (report.html)
 ```
 
 
