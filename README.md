@@ -518,26 +518,26 @@ multiomics/
 ├── reference/
 │   ├── KEGG_RIBOSOME.txt          # ribosomal gene reference list
 │   └── hto_doublet_calls.csv      # HTO-based doublet/singlet calls
-├── results/                       # figures save here too, alongside their data
+├── results/                       
 │   ├── 01_rna_seurat_object_raw.rds
 │   ├── 01_rna_qc_report_summary.png
 │   ├── 01_rna_qc_filter_cell.csv
 │   ├── 01_rna_qc_filter_gene.csv
 │   ├── 01_rna_qc_filter_mito.csv
-│   ├── 01_rna_qc_filter_quantile.csv       + 01_rna_seurat_object_quantile_trim.rds
-│   ├── 01_rna_doublet_summary.csv          + 01_rna_seurat_object_doublet_filtered.rds
-│   ├── 02_adt_qc_filter.csv                + 02_adt_seurat_object_filtered.rds  (orphan checkpoint, see table above)
+│   ├── 01_rna_qc_filter_quantile.csv       
+│   ├── 01_rna_doublet_summary.csv          
+│   ├── 02_adt_qc_filter.csv                
 │   ├── 02_adt_qc_report_summary.png
 │   ├── 03_rna_cluster_markers.csv
-│   ├── 03_rna_broad_annotation.csv         + 03_rna_seurat_object_annotated.rds
+│   ├── 03_rna_broad_annotation.csv         
 │   ├── 03_rna_umap_broad_labels.png
 │   ├── 04_adt_cluster_markers.csv
-│   ├── 04_adt_broad_annotation.csv         + 04_adt_seurat_object_annotated.rds
+│   ├── 04_adt_broad_annotation.csv         
 │   ├── 04_adt_umap_broad_labels.png
 │   ├── 05_wnn_cluster_markers_RNA.csv + 05_wnn_cluster_markers_ADT.csv
 │   ├── 05_wnn_broad_annotation.csv
 │   ├── 05_wnn_umap_broad_labels.png
-│   ├── 05_wnn_detailed_annotation.csv      + 05_wnn_seurat_object_detailed.rds
+│   ├── 05_wnn_detailed_annotation.csv      
 │   └── 05_wnn_umap_detailed_labels.png
 └── scripts/
     ├── run_pipeline.sh            (master script)
