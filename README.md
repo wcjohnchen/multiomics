@@ -564,13 +564,6 @@ multiomics/
   annotation CSVs, and the broad- and detailed-labeled WNN UMAP figures
   (`.png`).
 
-`report.html` — a self-contained dashboard (all 6 figures embedded as
-base64, no external assets) presenting the QC → single-modality → WNN
-integration structure with a sidebar TOC, stat-grid summary, and
-click-to-zoom lightbox, built in the exact format of
-`citeseq_final_plots/report.html`.
-
-
 ## 8. Notes
 
 Code was developed with assistance from Claude, an AI coding assistant, 
