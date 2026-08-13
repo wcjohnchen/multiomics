@@ -93,8 +93,7 @@ DoubletFinder per-lane breakdown
 
 | Step | Before | After | Removed | Notes |
 |---|---|---|---|---|
-| Antibody filter (≥100 cells/Ab) + cell filter (≥20 counts/cell) | 153,822 | 153,822 | **0** | Both non-binding by a wide margin. This checkpoint is not read by any later step (steps 9 and 18 both branch from earlier files) — kept for its QC figure/filter record only |
-| ADT QC report figure | — | — | — | Raw object, threshold lines; 6-panel |
+| Cell filter (≥20 Ab counts/cell) + Antibody filter (≥100 cells/Ab) | 153,822 cells | 153,822 cells | 0 | All cells retained |
 
 ### RNA UMAP
 
