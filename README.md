@@ -66,7 +66,7 @@ the two donor pools (`L_pool`: lanes `L1`–`L5` (67,090 cells); `E2_pool`: lane
 | Build Seurat object (RNA+ADT) | 161,764 cells | 161,764 cells | — | 33,538 genes, 228 antibodies |
 | Cell filter (≥200 genes/cell) | 161,764 cells| 161,764 cells| 0 | All cells retained |
 | Gene filter (≥100 cells/gene) | 33,538 genes | 17,808 genes | 15,730 genes | — |
-| Mito filter (<20% `percent.mt`) | 161,764 cells | 161,764 cells | 0 | All cells retained |
+| Mitochondria filter (<20% `percent.mt`) | 161,764 cells | 161,764 cells | 0 | All cells retained |
 | Quantile trim (2–98%, per pool) | 161,764 cells | 153,822 cells | 7,942 cells | — |
 | Doublet removal (DoubletFinder + HTO, union) | 153,822 cells | **141,852 cells** | 11,970 cells | Doublets were identified and removed independently within each sequencing lane: 11,537; HTO-based detection: 508; overlap: 75 |
 
@@ -553,14 +553,11 @@ multiomics/
 
 `results/` contains the following files:
 
-- **`01_rna_*`** — RNA QC report figure (`.png`), per-filter CSVs
-  (cell/gene/mito/quantile), and the doublet-removal summary CSV
-- **`02_adt_*`** — ADT filter CSV and the ADT QC report figure (`.png`)
-- **`03_rna_*`** — RNA cluster markers CSV, broad annotation CSV, and the labeled RNA UMAP figure (`.png`).
-- **`04_adt_*`** — ADT cluster marker genes (`.csv`), broad cluster annotation (`.csv`), and
-  ADT UMAP figure (`.png`)
-- **`05_wnn_*`** — RNA and ADT cluster marker genes (`.csv`), broad and detailed cluster
-  annotation (`.csv`), and WNN UMAP figures (`.png`)
+- **`01_rna_*`** — RNA cell/gene/mitochondria/quantile filter (`.csv`), doublet detection filter (`.csv`), and RNA QC figure (`.png`)
+- **`02_adt_*`** — ADT cell/antibody filter (`.csv`) and ADT QC figure (`.png`)
+- **`03_rna_*`** — RNA cluster markers genes (`.csv`), broad cluster annotation (`.csv`), and RNA UMAP figure (`.png`)
+- **`04_adt_*`** — ADT cluster marker genes (`.csv`), broad cluster annotation (`.csv`), and ADT UMAP figure (`.png`)
+- **`05_wnn_*`** — RNA and ADT cluster marker genes (`.csv`), broad and detailed cluster annotation (`.csv`), and WNN UMAP figures (`.png`)
 
 ## 8. Notes
 
