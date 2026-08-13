@@ -56,9 +56,35 @@ log_msg <- function(...) {
   cat(sprintf("[%s] ", format(Sys.time(), "%H:%M:%S")), sprintf(...), "\n", sep = "")
 }
 
-log_msg("Loading ADT-annotated object (has both pca and apca)...")
-obj <- readRDS(file.path(results_dir, "04_adt_seurat_object_annotated.rds"))
-log_msg("%d cells, reductions: %s", ncol(obj), paste(Reductions(obj), collapse = ", "))
+log_msg("Loading RNA branch (has pca) and ADT branch (has apca)...")
+obj_rna <- readRDS(file.path(results_dir, "03_rna_seurat_object_annotated.rds"))
+obj_adt <- readRDS(file.path(results_dir, "04_adt_seurat_object_annotated.rds"))
+log_msg("RNA branch: %d cells, reductions: %s", ncol(obj_rna), paste(Reductions(obj_rna), collapse = ", "))
+log_msg("ADT branch: %d cells, reductions: %s", ncol(obj_adt), paste(Reductions(obj_adt), collapse = ", "))
+
+# The two branches were filtered independently (RNA QC vs. ADT antibody/
+# cell filter, both applied on top of the same doublet-filtered
+# checkpoint) -- confirm they still agree on the exact same cell set
+# before merging, rather than assuming it.
+stopifnot(setequal(colnames(obj_rna), colnames(obj_adt)))
+obj_adt <- obj_adt[, colnames(obj_rna)]
+
+# Merge: start from the RNA branch (has pca + RNA annotations), then
+# bring in the ADT branch's own filtered/normalized ADT assay, its apca
+# reduction, and its ADT-specific annotations -- replacing the stale,
+# unfiltered ADT assay obj_rna still carries from before the two
+# branches split (03_rna_umap.R never touches ADT).
+obj <- obj_rna
+obj[["ADT"]]      <- obj_adt[["ADT"]]
+obj[["apca"]]     <- obj_adt[["apca"]]
+obj$nCount_ADT     <- obj_adt$nCount_ADT
+obj$nFeature_ADT   <- obj_adt$nFeature_ADT
+obj$adt_clusters   <- obj_adt$adt_clusters
+obj$adt_broad_lineage        <- obj_adt$adt_broad_lineage
+obj$adt_annotation_confidence <- obj_adt$adt_annotation_confidence
+rm(obj_rna, obj_adt); gc()
+
+log_msg("Merged: %d cells, reductions: %s", ncol(obj), paste(Reductions(obj), collapse = ", "))
 
 ## =============================================================================
 ## Step 1/8 (script 25): FindMultiModalNeighbors (WNN)

@@ -1,8 +1,10 @@
 # Snakemake workflow for the CITE-seq pipeline.
 # Alternative to scripts/run_pipeline.sh -- wraps the same 5 scripts,
 # but gets Snakemake's DAG-based dependency tracking, partial re-runs,
-# and parallelism (rule 01 and rule 02 don't depend on each other and
-# can run with --cores 2+).
+# and parallelism (rule rna_umap and rule adt_qc_filter/adt_umap don't
+# depend on each other -- both branch independently from rna_qc_filter's
+# doublet-filtered checkpoint, only merging back at wnn_integration --
+# and can run with --cores 2+).
 #
 # Usage:
 #   snakemake -n                                    # dry run
@@ -96,7 +98,7 @@ rule rna_qc_filter:
 rule adt_qc_filter:
     input:
         raw_obj = "results/01_rna_seurat_object_raw.rds",
-        quantile_trim_obj = "results/01_rna_seurat_object_quantile_trim.rds",
+        doublet_obj = "results/01_rna_seurat_object_doublet_filtered.rds",
         script = "scripts/02_adt_qc_filter.R"
     output:
         adt_obj = "results/02_adt_seurat_object_filtered.rds",
@@ -119,7 +121,7 @@ rule rna_umap:
 
 rule adt_umap:
     input:
-        rna_annotated_obj = "results/03_rna_seurat_object_annotated.rds",
+        adt_filtered_obj = "results/02_adt_seurat_object_filtered.rds",
         script = "scripts/04_adt_umap.R"
     output:
         adt_annotated_obj = "results/04_adt_seurat_object_annotated.rds",
@@ -131,6 +133,7 @@ rule adt_umap:
 
 rule wnn_integration:
     input:
+        rna_annotated_obj = "results/03_rna_seurat_object_annotated.rds",
         adt_annotated_obj = "results/04_adt_seurat_object_annotated.rds",
         script = "scripts/05_wnn_integration.R"
     output:

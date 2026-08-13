@@ -2,8 +2,10 @@
 #
 # Combined ADT normalization -> UMAP -> clustering -> annotation pipeline
 # -- consolidates scripts 18, 19, 20, 21, 22, 23, 24. Covers everything
-# from the RNA-annotated object (which already carries the shared 228-
-# antibody ADT counts) to the final labeled ADT-only UMAP plot.
+# from 02_adt_qc_filter.R's own ADT-filtered checkpoint to the final
+# labeled ADT-only UMAP plot. Runs as its own branch, independent of and
+# parallel to 03_rna_umap.R -- the two are only combined at WNN
+# integration (05_wnn_integration.R), not before.
 #
 #   1. CLR normalization, margin=2 (script 18)
 #   2. Scale + PCA, all 228 antibodies, 30 PCs (script 19) -- no HVG-style
@@ -11,8 +13,11 @@
 #      deliberately curated to be informative, so all are used directly.
 #   3. UMAP on apca (script 20)
 #   4. FindNeighbors + FindClusters, 29 clusters, using distinct
-#      `adt_clusters`/`adt_snn` names so as not to collide with the RNA
-#      clustering already on this object (script 21)
+#      `adt_clusters`/`adt_snn` names -- this object has no RNA clustering
+#      on it (this branch never touches 03_rna_umap.R's output), but
+#      distinct names avoid a future collision once 05_wnn_integration.R
+#      merges this branch with the RNA one, which does carry
+#      `seurat_clusters` (script 21)
 #   5. FindAllMarkers, all 228 antibodies (script 22)
 #   6. Manual broad-lineage annotation, using ADT surface-protein markers
 #      -- several near-definitive single-protein calls (TCR-Va7.2 for
@@ -53,8 +58,8 @@ log_msg <- function(...) {
   cat(sprintf("[%s] ", format(Sys.time(), "%H:%M:%S")), sprintf(...), "\n", sep = "")
 }
 
-log_msg("Loading RNA-annotated Seurat object...")
-obj <- readRDS(file.path(results_dir, "03_rna_seurat_object_annotated.rds"))
+log_msg("Loading ADT-filtered Seurat object...")
+obj <- readRDS(file.path(results_dir, "02_adt_seurat_object_filtered.rds"))
 log_msg("%d cells, %d antibodies (ADT)", ncol(obj), nrow(obj[["ADT"]]))
 
 ## =============================================================================

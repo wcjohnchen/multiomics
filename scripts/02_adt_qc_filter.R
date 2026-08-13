@@ -9,11 +9,13 @@
 #   2. Antibody filter + cell filter (script 07): antibody detected in
 #      >=100 cells; cell has nCount_ADT>=20 AND nFeature_ADT>=20.
 #
-# Runs on top of the RNA-side quantile-trimmed checkpoint (05). Note: the
-# resulting checkpoint here is -- same as before combining -- not read by
-# any later step in this rebuild (script 09 branches from 05, script 18
-# branches from 16, both skipping past this one). Kept for its QC
-# figure/filter record, not because downstream steps depend on it.
+# Runs on top of RNA's FINAL doublet-filtered checkpoint (09), not the
+# earlier pre-doublet quantile-trim one -- a doublet is a property of the
+# physical droplet, not one modality, so it should be removed before any
+# modality-specific filter (RNA's or ADT's) is computed, not interleaved
+# with them. 04_adt_umap.R reads this step's output directly, as the start
+# of its own independent branch (parallel to 03_rna_umap.R), merging with
+# the RNA branch only at WNN integration (05).
 #
 # Usage:
 #   conda activate citeseq-pipeline
@@ -136,7 +138,7 @@ rm(qc_df, cells_per_antibody_raw, antibody_df, p_a, p_b, p_c, p_d, p_e, p_f, p_c
 ## =============================================================================
 
 log_msg("Step 2/2: ADT filtering (antibody + cell)...")
-obj <- readRDS(file.path(results_dir, "01_rna_seurat_object_quantile_trim.rds"))
+obj <- readRDS(file.path(results_dir, "01_rna_seurat_object_doublet_filtered.rds"))
 n_cells_before <- ncol(obj)
 n_ab_before <- nrow(obj[["ADT"]])
 log_msg("Before ADT filtering: %d cells, %d antibodies", n_cells_before, n_ab_before)

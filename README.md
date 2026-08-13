@@ -91,9 +91,13 @@ DoubletFinder per-lane breakdown:
 
 ### ADT QC
 
+Runs on RNA's final doublet-filtered population (141,852 cells), not the
+earlier pre-doublet checkpoint — see "Analysis Workflow" above. Verified
+via a real full pipeline re-run (2026-08-13).
+
 | Step | Before | After | Removed | Notes |
 |---|---|---|---|---|
-| Cell filter (≥20 Ab counts/cell) | 153,822 cells | **153,822 cells** | 0 | All cells retained |
+| Cell filter (≥20 Ab counts/cell) | 141,852 cells | **141,852 cells** | 0 | All cells retained |
 | Antibody filter (≥100 cells/Ab) | 228 Ab | **228 Ab** | 0 | All antibodies retained |
 
 ### RNA UMAP
@@ -128,7 +132,7 @@ DoubletFinder per-lane breakdown:
 | 25 | `FindMultiModalNeighbors`, `pca`+`apca`, dims 1:30 each, seed=42 | Joint `wknn`/`wsnn` graphs. RNA weight: median 0.55, ranges near-0 to 1.0 per cell |
 | 26 | `RunUMAP` on the WNN graph, seed=42 | `wnn.umap` embedding (no plot) |
 | 27 | `FindClusters` on `wsnn`, algorithm=3, resolution=1.2, seed=42 | 49 clusters (`wnn_clusters`, kept separate from RNA's `seurat_clusters`) |
-| 28 | `FindAllMarkers`, both RNA (2000 HVGs) and ADT (228 antibodies) | 13,194 RNA + 2,155 ADT marker rows |
+| 28 | `FindAllMarkers`, both RNA (2000 HVGs) and ADT (228 antibodies) | 13,194 RNA + 2,320 ADT marker rows |
 | 29 | Manual annotation using RNA+ADT markers together | 13 broad categories |
 | 30 | Labeled WNN UMAP plot (broad) | `results/05_wnn_umap_broad_labels.png` |
 | 31 | Per-cluster detailed annotation, all 49 clusters | `results/05_wnn_detailed_annotation.csv` |
@@ -230,7 +234,8 @@ Read RNA raw matrix              Read ADT raw matrix
                           │
                           ▼
          Build combined Seurat object
-          (RNA + ADT assays, shared cells)
+          (RNA + ADT assays, shared cells
+           -- same droplet, same barcode)
                   161,764 cells
                           │
                           ▼
@@ -238,45 +243,46 @@ Read RNA raw matrix              Read ADT raw matrix
     (Cell filter, gene filter, mito filter,
       quantile trim -- 153,822 cells)
                           │
+                          ▼
+               Doublet Removal
+     (DoubletFinder + HTO, per-lane, union
+          seed=42 -- 141,852 cells)
+                          │
            ┌──────────────┴──────────────┐
            │                              │
            ▼                              ▼
-   Doublet Removal                 ADT Filtering
-(DoubletFinder + HTO,           (Antibody filter, cell filter --
- per-lane, union -- seed=42)     both non-binding here: 0 removed)
+    RNA Processing                 ADT Filtering
+(LogNormalize, HVG,              (Antibody filter, cell
+ scale + PCA, UMAP,               filter -- both non-binding
+ cluster: 24, annotate: 12)       here: 0 removed)
            │                              │
-           ▼                              ▼
-   141,852 cells                    [DEAD END --
-17,808 genes · 228 antibodies       nothing downstream reads
-           │                         this checkpoint today]
-           ▼
-      RNA Processing
-(LogNormalize, HVG, scale + PCA,
- UMAP, cluster: 24, annotate: 12)
-           │
-           ▼
-      ADT Processing
-(CLR normalize, scale + PCA, UMAP,
- cluster: 29, annotate: 9 -- reads the
- RNA-annotated object above, not the
- 141,852-cell checkpoint directly)
-           │
-           ▼
-     WNN Integration
-(FindMultiModalNeighbors on pca + apca,
- UMAP, cluster: 49, annotate: 13 broad
- + 49 detailed)
-           │
-           ▼
-     6 Final Figures
-      (report.html)
+           │                              ▼
+           │                       ADT Processing
+           │                     (CLR normalize, scale +
+           │                      PCA, UMAP, cluster: 29,
+           │                      annotate: 9)
+           │                              │
+           └──────────────┬───────────────┘
+                           │
+                           ▼
+                 WNN Integration
+     (FindMultiModalNeighbors on pca + apca,
+      UMAP, cluster: 49, annotate: 13 broad
+      + 49 detailed)
+                           │
+                           ▼
+                  6 Final Figures
+                   (report.html)
 ```
 
-**Note on the current architecture**: RNA Processing and ADT Processing are not
-actually parallel branches — `04_adt_umap.R` reads `03_rna_seurat_object_annotated.rds`
-(RNA processing's own output), not the shared 141,852-cell checkpoint directly. The real
-chain today is linear (`01 → 03 → 04 → 05`), with ADT Filtering (`02_adt_qc_filter.R`)
-as the only true dead-end — its output is never read downstream.
+RNA Processing and ADT Filtering both branch independently from the same
+doublet-filtered checkpoint (141,852 cells) — `02_adt_qc_filter.R` reads
+`01_rna_seurat_object_doublet_filtered.rds` directly, and `04_adt_umap.R`
+reads `02_adt_seurat_object_filtered.rds`, never touching the RNA branch.
+The two branches only merge at `05_wnn_integration.R`, which loads both
+`03_rna_seurat_object_annotated.rds` (has `pca`) and
+`04_adt_seurat_object_annotated.rds` (has `apca`) and combines them
+before running `FindMultiModalNeighbors`.
 
 
 ## 5. Running the Analysis Workflow
