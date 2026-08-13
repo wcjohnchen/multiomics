@@ -555,9 +555,9 @@ multiomics/
 
 - **`01_rna_*`** — RNA cell/gene/mitochondria/quantile filter (`.csv`), doublet detection filter (`.csv`), and RNA QC figure (`.png`)
 - **`02_adt_*`** — ADT cell/antibody filter (`.csv`) and ADT QC figure (`.png`)
-- **`03_rna_*`** — RNA cluster markers genes (`.csv`), broad cluster annotation (`.csv`), and RNA UMAP figure (`.png`)
-- **`04_adt_*`** — ADT cluster marker genes (`.csv`), broad cluster annotation (`.csv`), and ADT UMAP figure (`.png`)
-- **`05_wnn_*`** — RNA and ADT cluster marker genes (`.csv`), broad and detailed cluster annotation (`.csv`), and WNN UMAP figures (`.png`)
+- **`03_rna_*`** — RNA cluster markers (`.csv`), broad cluster annotation (`.csv`), and RNA UMAP figure (`.png`)
+- **`04_adt_*`** — ADT cluster markers (`.csv`), broad cluster annotation (`.csv`), and ADT UMAP figure (`.png`)
+- **`05_wnn_*`** — RNA and ADT cluster markers (`.csv`), broad and detailed cluster annotation (`.csv`), and WNN UMAP figures (`.png`)
 
 ## 8. Notes
 
