@@ -519,7 +519,6 @@ multiomics/
 │   ├── KEGG_RIBOSOME.txt          # ribosomal gene reference list
 │   └── hto_doublet_calls.csv      # HTO-based doublet/singlet calls
 ├── results/                       
-│   ├── 01_rna_seurat_object_raw.rds
 │   ├── 01_rna_qc_report_summary.png
 │   ├── 01_rna_qc_filter_cell.csv
 │   ├── 01_rna_qc_filter_gene.csv
@@ -534,7 +533,8 @@ multiomics/
 │   ├── 04_adt_cluster_markers.csv
 │   ├── 04_adt_broad_annotation.csv         
 │   ├── 04_adt_umap_broad_labels.png
-│   ├── 05_wnn_cluster_markers_RNA.csv + 05_wnn_cluster_markers_ADT.csv
+│   ├── 05_wnn_cluster_markers_RNA.csv
+│   ├── 05_wnn_cluster_markers_ADT.csv
 │   ├── 05_wnn_broad_annotation.csv
 │   ├── 05_wnn_umap_broad_labels.png
 │   ├── 05_wnn_detailed_annotation.csv      
