@@ -553,20 +553,28 @@ multiomics/
 
 `results/` contains the following files:
 
-- **`01_rna_*`** — raw and quantile-trimmed Seurat object checkpoints
-  (`.rds`), the RNA QC report figure, per-filter CSVs (cell/gene/mito/
-  quantile), the doublet-removal summary CSV, and the final
-  doublet-filtered Seurat object.
-- **`02_adt_*`** — the ADT-filtered Seurat object checkpoint, its filter
-  CSV, and the ADT QC report figure.
-- **`03_rna_*`** — RNA cluster markers CSV, broad annotation CSV, the
-  labeled RNA UMAP PNG, and the RNA-annotated Seurat object checkpoint.
-- **`04_adt_*`** — ADT cluster markers CSV, broad annotation CSV, the
-  labeled ADT UMAP PNG, and the ADT-annotated Seurat object checkpoint.
-- **`05_wnn_*`** — RNA and ADT cluster markers CSVs, broad and detailed
-  annotation CSVs, the broad- and detailed-labeled WNN UMAP PNGs, and
-  the final WNN-integrated Seurat object checkpoint (cumulative — see
-  "Directory Structure" above).
+| File | Description |
+|---|---|
+| `01_rna_qc_report_summary.png` | RNA QC report figure (7-panel), raw/pre-filter object with threshold lines |
+| `01_rna_qc_filter_cell.csv` | Cell filter (≥200 genes/cell) before/after counts |
+| `01_rna_qc_filter_gene.csv` | Gene filter (≥100 cells/gene) before/after counts |
+| `01_rna_qc_filter_mito.csv` | Mito filter (<20% `percent.mt`) before/after counts |
+| `01_rna_qc_filter_quantile.csv` | Quantile trim (2–98%, per pool) before/after counts |
+| `01_rna_doublet_summary.csv` | Doublet removal summary (DoubletFinder + HTO union counts) |
+| `02_adt_qc_filter.csv` | ADT antibody/cell filter before/after counts |
+| `02_adt_qc_report_summary.png` | ADT QC report figure (6-panel), raw/pre-filter object with threshold lines |
+| `03_rna_cluster_markers.csv` | RNA `FindAllMarkers` output — marker genes per cluster |
+| `03_rna_broad_annotation.csv` | RNA broad-lineage annotation (12 categories) per cluster |
+| `03_rna_umap_broad_labels.png` | Labeled RNA UMAP plot (broad categories) |
+| `04_adt_cluster_markers.csv` | ADT `FindAllMarkers` output — marker antibodies per cluster |
+| `04_adt_broad_annotation.csv` | ADT broad-lineage annotation (9 categories) per cluster |
+| `04_adt_umap_broad_labels.png` | Labeled ADT UMAP plot (broad categories) |
+| `05_wnn_cluster_markers_RNA.csv` | WNN-stage RNA marker genes per WNN cluster |
+| `05_wnn_cluster_markers_ADT.csv` | WNN-stage ADT marker antibodies per WNN cluster |
+| `05_wnn_broad_annotation.csv` | WNN broad-lineage annotation (13 categories) |
+| `05_wnn_umap_broad_labels.png` | Labeled WNN UMAP plot (broad categories) |
+| `05_wnn_detailed_annotation.csv` | WNN detailed per-cluster annotation, all 49 clusters |
+| `05_wnn_umap_detailed_labels.png` | Labeled WNN UMAP plot (detailed, numbered + grouped legend) |
 
 `report.html` — a self-contained dashboard (all 6 figures embedded as
 base64, no external assets) presenting the QC → single-modality → WNN
