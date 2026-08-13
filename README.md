@@ -70,7 +70,7 @@ the two donor pools (`L_pool`: lanes `L1`–`L5` (67,090 cells); `E2_pool`: lane
 | Quantile trim (2–98%, per pool) | 161,764 cells | 153,822 cells | 7,942 cells | — |
 | Doublet removal (DoubletFinder + HTO, union) | 153,822 cells | **141,852 cells** | 11,970 cells | Doublets were identified and removed independently within each sequencing lane: 11,537; HTO-based detection: 508; overlap: 75 |
 
-DoubletFinder per-lane breakdown
+DoubletFinder per-lane breakdown:
 
 | Lane | Cells | Doublets | Singlets |
 |---|---|---|---|
