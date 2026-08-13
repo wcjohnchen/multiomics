@@ -189,10 +189,6 @@ DoubletFinder per-lane breakdown:
 
 ## 3. Environment Setup
 
-Conda env `citeseq-pipeline` (R 4.5.3), built package-by-package as each
-step needed something new. Location is whatever `conda`/`mamba` uses by
-default on your machine (typically `<conda install prefix>/envs/citeseq-pipeline`).
-
 Dependencies are pinned in `renv.lock` (147 packages, R version: 4.5.3).  From the project root, open R:
 
 ```
