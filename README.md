@@ -68,7 +68,7 @@ the two donor pools (`L_pool`: lanes `L1`–`L5` (67,090 cells); `E2_pool`: lane
 | Gene filter (≥100 cells/gene) | 33,538 genes | 17,808 genes | 15,730 genes | — |
 | Mito filter (<20% `percent.mt`) | 161,764 cells | 161,764 cells | 0 | All cells retained |
 | Quantile trim (2–98%, per pool) | 161,764 cells | 153,822 cells | 7,942 cells | — |
-| Doublet removal (DoubletFinder + HTO, union) | 153,822 cells | 141,852 cells | 11,970 cells | Doublets were identified and removed independently within each sequencing lane: 11,537; HTO-based detection: 508; overlap: 75 |
+| Doublet removal (DoubletFinder + HTO, union) | 153,822 cells | **141,852 cells** | 11,970 cells | Doublets were identified and removed independently within each sequencing lane: 11,537; HTO-based detection: 508; overlap: 75 |
 
 DoubletFinder per-lane breakdown
 
@@ -91,10 +91,10 @@ DoubletFinder per-lane breakdown
 
 ### ADT QC
 
-| # | Step | Before | After | Removed | Notes |
-|---|---|---|---|---|---|
-| 7 | Antibody filter (≥100 cells/Ab) + cell filter (≥20 counts/cell) | 153,822 | 153,822 | **0** | Both non-binding by a wide margin. This checkpoint is not read by any later step (steps 9 and 18 both branch from earlier files) — kept for its QC figure/filter record only |
-| 8 | ADT QC report figure | — | — | — | Raw object, threshold lines; 6-panel |
+| Step | Before | After | Removed | Notes |
+|---|---|---|---|---|
+| Antibody filter (≥100 cells/Ab) + cell filter (≥20 counts/cell) | 153,822 | 153,822 | **0** | Both non-binding by a wide margin. This checkpoint is not read by any later step (steps 9 and 18 both branch from earlier files) — kept for its QC figure/filter record only |
+| ADT QC report figure | — | — | — | Raw object, threshold lines; 6-panel |
 
 ### RNA UMAP
 
