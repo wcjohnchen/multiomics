@@ -32,9 +32,14 @@ final combined annotation.
 ^ Please manually download the raw data from NCBI GEO GSE164378 samples `GSM5008737` and `GSM5008738`, and place the files in the
 `data/` folder.
 
+Barcodes carry a lane prefix identifying the 13 sequencing lanes across
+the two donor pools (`L_pool`: lanes `L1`–`L5` (67,090 cells); `E2_pool`: lanes `E2L1`–`E2L8` (94,674 cells))
+
 reference/hto_doublet_calls.csv contains per-cell hashtag oligonucleotide (HTO)-based doublet/singlet calls derived from 
 Hao et al. datasets (2021). It provides barcode-level annotations used in the pipeline to identify and 
 remove cells classified as HTO Doublets. <br>
+
+reference/KEGG_RIBOSOME.txt contains a list of human RPL and RPS ribosomal gene set obtained from MSigDB. It serves as a reference for identifying ribosome-related expression.
 
 Barcodes carry a lane prefix identifying the 13 sequencing lanes across
 the two donor pools (`L_pool`: lanes `L1`–`L5` (67,090 cells); `E2_pool`: lanes `E2L1`–`E2L8` (94,674 cells))
