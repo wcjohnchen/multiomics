@@ -25,11 +25,11 @@ final combined annotation.
 
 ## 1. Data
 
-**Source:** GEO accession [GSE164378](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE164378)
+**Source:** GEO accession [GSE164378](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE164378) ^<br>
 **Files:** `GSM5008737 PBMC CITE-seq RNA_3P {barcodes,features,matrix}` (RNA: 33,538 genes × 161,764 cells, ~1.05 GB) and `GSM5008738 PBMC CITE-seq ADT_3P {barcodes,features,matrix}` (ADT: 228 antibodies × 161,764 cells, ~100 MB) <br>
 **Design:** 161,764 cells across 13 sequencing lanes in 2 donor pools <br>
 
-**Please manually download the raw data from NCBI GEO series
+^ Please manually download the raw data from NCBI GEO series
 [GSE164378](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE164378)
 (samples `GSM5008737` and `GSM5008738`) and place the files in the
 `data/` folder** (created automatically by `01_rna_qc_filter.R` on its
