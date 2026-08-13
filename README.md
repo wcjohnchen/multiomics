@@ -61,20 +61,18 @@ the two donor pools (`L_pool`: lanes `L1`–`L5` (67,090 cells); `E2_pool`: lane
 
 ### RNA QC
 
-| # | Step | Before | After | Removed | Notes |
-|---|---|---|---|---|---|
-| 1 | Build Seurat object (RNA+ADT) | 161,764 cells | 161,764 cells | — | 33,538 genes, 228 antibodies |
-| 2 | Cell filter (≥200 genes/cell) | 161,764 cells| 161,764 cells| 0 | All cells retained |
-| 3 | Gene filter (≥100 cells/gene) | 33,538 genes | 17,808 genes | 15,730 genes | — |
-| 4 | Mito filter (<20% `percent.mt`) | 161,764 cells | 161,764 cells | 0 | All cells retained |
-| 5 | Quantile trim (2–98%, per pool) | 161,764 cells | 153,822 cells | 7,942 cells | — |
-| 9 | Doublet removal (DoubletFinder + HTO, union) | 153,822 cells | 141,852 cells | 11,970 cells | `seed=42`. Doublets were identified and removed independently within each sequencing lane: 11,537; HTO-based detection: 508; overlap: 75 |
+| Step | Before | After | Removed | Notes |
+|---|---|---|---|---|
+| Build Seurat object (RNA+ADT) | 161,764 cells | 161,764 cells | — | 33,538 genes, 228 antibodies |
+| Cell filter (≥200 genes/cell) | 161,764 cells| 161,764 cells| 0 | All cells retained |
+| Gene filter (≥100 cells/gene) | 33,538 genes | 17,808 genes | 15,730 genes | — |
+| Mito filter (<20% `percent.mt`) | 161,764 cells | 161,764 cells | 0 | All cells retained |
+| Quantile trim (2–98%, per pool) | 161,764 cells | 153,822 cells | 7,942 cells | — |
+| Doublet removal (DoubletFinder + HTO, union) | 153,822 cells | 141,852 cells | 11,970 cells | Doublets were identified and removed independently within each sequencing lane: 11,537; HTO-based detection: 508; overlap: 75 |
 
-DoubletFinder per-lane breakdown (each lane gets its own PCA and its
-own expected doublet rate — 7.5% of that lane's cell count, `pN=0.25`,
-`pK=0.01` — not a shared global threshold):
+DoubletFinder per-lane breakdown
 
-| Lane | Cells | Doublets flagged | Singlets |
+| Lane | Cells | Doublets | Singlets |
 |---|---|---|---|
 | E2L1 | 10,895 | 817 | 10,078 |
 | E2L2 | 11,531 | 865 | 10,666 |
@@ -90,9 +88,6 @@ own expected doublet rate — 7.5% of that lane's cell count, `pN=0.25`,
 | L4 | 12,721 | 954 | 11,767 |
 | L5 | 13,874 | 1,041 | 12,833 |
 | **Total** | **153,822** | **11,537** | **142,285** |
-
-This 11,537 is unioned with the 508 HTO-based calls (not lane-grouped)
-to reach the final 11,970 doublets removed.
 
 ### ADT QC
 
