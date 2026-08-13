@@ -93,7 +93,8 @@ DoubletFinder per-lane breakdown
 
 | Step | Before | After | Removed | Notes |
 |---|---|---|---|---|
-| Cell filter (≥20 Ab counts/cell) + Antibody filter (≥100 cells/Ab) | 153,822 cells | 153,822 cells | 0 | All cells retained |
+| Cell filter (≥20 Ab counts/cell) | 153,822 cells | **153,822 cells** | 0 | All cells retained |
+| Antibody filter (≥100 cells/Ab) | 228 Ab | **228 Ab** | 0 | All antibodies retained |
 
 ### RNA UMAP
 
