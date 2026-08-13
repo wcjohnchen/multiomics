@@ -37,9 +37,7 @@ Hao et al. datasets (2021). It provides barcode-level annotations used in the pi
 remove cells classified as HTO Doublets. <br>
 
 Barcodes carry a lane prefix identifying the 13 sequencing lanes across
-the two donor pools:
-- `L_pool`: lanes `L1`–`L5` (67,090 cells)
-- `E2_pool`: lanes `E2L1`–`E2L8` (94,674 cells)
+the two donor pools (`L_pool`: lanes `L1`–`L5` (67,090 cells); `E2_pool`: lanes `E2L1`–`E2L8` (94,674 cells))
 
 
 
