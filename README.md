@@ -419,22 +419,18 @@ in `data/`), the pipeline can be run in two ways.
 
 ### A. Manual Execution
 
-Run `scripts/run_pipeline.sh` — it auto-detects whether to use the local
-conda env or renv (installs packages automatically via `renv::restore()`
-if needed), runs all 5 scripts below in order, logs each one's full
-output to `logs/<timestamp>_<step>.log`, and stops immediately on the
-first failure. Expect ~1.5-2.5 hours total (plus install time on a fresh
-clone with no packages yet).
+Run `scripts/run_pipeline.sh`.
 
 ```bash
 cd multiomics/   # run from the project root
+
 ./scripts/run_pipeline.sh
 ```
 
-Or invoke each of the 5 scripts individually, in order:
+Or run each of the scripts in order:
 
 ```bash
-conda activate citeseq-pipeline   # or rely on renv, see Environment Setup
+cd multiomics/   # run from the project root
 
 Rscript scripts/01_rna_qc_filter.R
 Rscript scripts/02_adt_qc_filter.R
@@ -445,16 +441,6 @@ Rscript scripts/05_wnn_integration.R
 
 ### B. Snakemake
 
-`Snakefile` (project root) wraps the same 5 scripts as DAG-tracked
-rules, same pattern as the `RNA-seq` project — `RSCRIPT =
-config.get("rscript", "Rscript")`, so it points at whatever R you give
-it rather than assuming a specific env. Unlike `run_pipeline.sh`, it
-tracks per-file dependencies: if you edit one script and rerun, only
-that rule (and anything downstream of it) re-executes, not the whole
-pipeline. `adt_qc_filter` (step 7-8) is a side-branch — its outputs
-feed nothing downstream, matching the "orphan checkpoint" note above —
-so it's listed explicitly in `rule all` or it wouldn't run at all.
-
 Snakemake requires a separate environment from the R project environment
 managed by `renv`. To create the environment:
 
@@ -463,40 +449,14 @@ mamba create -n snakemake_env -c bioconda -c conda-forge \
   --no-channel-priority snakemake-minimal=9.23.1
 ```
 
-Run from the project root with the `snakemake_env` environment active:
+A `Snakefile` at the project root automates execution of the pipeline.  Run from the project root with the `snakemake_env` environment active:
 
 ```bash
 conda activate snakemake_env
 
 snakemake -n --cores 1                                   # dry run
-snakemake --cores 1                                       # real run, "Rscript" on PATH (conda env activated first)
-snakemake --cores 2 --config rscript=/path/to/citeseq-pipeline/bin/Rscript
+snakemake --cores 2 --config rscript=/full/path/to/Rscript
 ```
-
-**Conda env only, not `renv::restore()`.** Each rule `cd`s into
-`scripts/` before invoking R, same as `run_pipeline.sh`'s conda branch —
-necessary because Snakemake's shell commands run with cwd = the project
-root, which has `.Rprofile`, so without the explicit `cd`, renv would
-activate on every single rule invocation and (since
-`renv/settings.json`'s `external.libraries` is empty, on purpose — see
-"Environment Setup" above) hide the conda env's packages entirely.
-Confirmed by actually hitting this exact failure before adding the `cd`.
-But that same `cd` means renv never activates either, so
-`renv/library/` (where `renv::restore()` installs) is never reachable
-from here — **if you used `renv::restore()` instead of conda, use
-`run_pipeline.sh`, not this**; it auto-detects and runs from the project
-root specifically so renv can activate. Raw data must already be in
-`data/` either way, same as `run_pipeline.sh`.
-
-Verified with a real dry-run (correct 5-rule DAG, correct dependency
-ordering, `adt_qc_filter` correctly resolved as a non-blocking
-side-branch), a real incremental-rerun test (touching one script's mtime
-correctly triggered only that rule to re-run, everything else stayed
-marked up to date), and a real full execution of the entire DAG
-end-to-end (all 5 rules, conda env's R — completed successfully with 0
-errors, 141,852 cells / 49 WNN clusters / 13 broad lineage categories in
-the final output, matching the already-independently-verified numbers
-throughout this README exactly).
 
 
 ## 6. Directory Structure
@@ -558,6 +518,7 @@ multiomics/
 - **`03_rna_*`** — RNA cluster markers (`.csv`), broad cluster annotation (`.csv`), and RNA UMAP figure (`.png`)
 - **`04_adt_*`** — ADT cluster markers (`.csv`), broad cluster annotation (`.csv`), and ADT UMAP figure (`.png`)
 - **`05_wnn_*`** — RNA and ADT cluster markers (`.csv`), broad and detailed cluster annotation (`.csv`), and WNN UMAP figures (`.png`)
+
 
 ## 8. Notes
 
