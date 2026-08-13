@@ -244,26 +244,14 @@ Conda env `citeseq-pipeline` (R 4.5.3), built package-by-package as each
 step needed something new. Location is whatever `conda`/`mamba` uses by
 default on your machine (typically `<conda install prefix>/envs/citeseq-pipeline`).
 
-Top 12 key packages (verified installed, `packageVersion()` in the env):
+Key package versions:
 
-| # | Package | Version | Source | Needed for |
-|---|---|---|---|---|
-| 1 | `r-base` (R) | 4.5.3 | conda-forge | base R |
-| 2 | `Seurat` | 5.5.1 | conda-forge | core object model, all steps |
-| 3 | `SeuratObject` | 5.4.0 | conda-forge | Seurat dependency |
-| 4 | `Matrix` | 1.7.5 | conda-forge | sparse count matrices (`ReadMtx`, filtering) |
-| 5 | `DoubletFinder` | 2.0.6 | GitHub (`chris-mcginnis-ucsf/DoubletFinder`) | RNA doublet detection (step 9) |
-| 6 | `ggplot2` | 4.0.3 | bundled as Seurat dep | QC report figures, UMAP plots |
-| 7 | `patchwork` | 1.3.2 | bundled as Seurat dep | multi-panel QC figures, WNN legend grid |
-| 8 | `dplyr` | 1.2.1 | bundled as Seurat dep | UMAP centroid computation, legend tables |
-| 9 | `ggrepel` | 0.9.8 | bundled as Seurat dep | non-overlapping UMAP cluster labels |
-| 10 | `scales` | 1.4.0 | bundled as Seurat dep | axis formatting (`scales::comma`) in QC figures |
-| 11 | `viridisLite` | 0.4.3 | bundled as Seurat dep | QC figure color scales (`scale_fill_viridis_c`) |
-| 12 | `data.table` | 1.18.4 | conda-forge | DoubletFinder dependency |
-
-Also installed as DoubletFinder build/runtime dependencies but not in the
-top 12 above: `remotes` 2.5.0 (installing DoubletFinder from GitHub),
-`fields` 17.3, `ROCR` 1.0.12.
+| # | Package | Version | Source |
+|---|---|---|---|
+| 1 | `r-base` (R) | 4.5.3 | conda-forge |
+| 2 | `Seurat` | 5.5.1 | conda-forge |
+| 3 | `Matrix` | 1.7.5 | conda-forge |
+| 4 | `DoubletFinder` | 2.0.6 | GitHub (`chris-mcginnis-ucsf/DoubletFinder`) |
 
 ### `renv.lock`
 
