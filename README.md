@@ -109,17 +109,6 @@ DoubletFinder per-lane breakdown:
 | 16 | Manual marker-based annotation | 12 broad categories |
 | 17 | Labeled RNA UMAP plot | `results/03_rna_umap_broad_labels.png` |
 
-RNA broad lineage breakdown (141,852 cells): CD4 T 40,017 · CD8 T 37,669 ·
-Monocyte 44,393 · NK 12,572 · B cell 12,605 · gdT/NK 4,062 · MAIT 4,046 ·
-DC 644 · Proliferating 540 · HSPC 148 · ILC 25 · pDC 15.
-
-Two labels were corrected after cross-checking against the UMAP embedding
-(marker signal alone was ambiguous for both): cluster 15 (`TNF`/`CCL3`/
-`CCL4`/`NFKBIA`) embeds inside the Monocyte island — relabeled Monocyte,
-not "T cell (activated)". Cluster 22 (`KIT`/`GATA3`/`IL1R1`/`SPINK2`)
-embeds within the CD8 T/NK lymphoid branch, far from the true HSPC
-cluster — relabeled ILC, not "HSPC/Basophil".
-
 ### ADT UMAP
 
 | # | Step | Result |
@@ -131,16 +120,6 @@ cluster — relabeled ILC, not "HSPC/Basophil".
 | 22 | `FindAllMarkers`, all 228 antibodies | 1,290 marker rows |
 | 23 | Manual marker-based annotation | 9 broad categories |
 | 24 | Labeled ADT UMAP plot | `results/04_adt_umap_broad_labels.png` |
-
-ADT broad lineage breakdown (141,852 cells): Monocyte 42,480 · CD4 T
-38,017 · CD8 T 25,003 · NK 16,954 · B cell 12,623 · MAIT 2,614 · DC 2,602 ·
-gdT 1,370 · HSPC 189.
-
-ADT surface-protein markers were more directly interpretable than RNA
-gene markers for several lineages — `TCR-Va7.2` (MAIT), `TCR-Vg9`/
-`TCR-Vd2` (gdT), `CD34`/`CD117`/`CD133` (HSPC), `CD103` (tissue-resident
-CD8 T), and `CD141` (cDC1) are all near-definitive single-protein
-identity markers.
 
 ### WNN-based multimodal integration
 
@@ -154,29 +133,6 @@ identity markers.
 | 30 | Labeled WNN UMAP plot (broad) | `results/05_wnn_umap_broad_labels.png` |
 | 31 | Per-cluster detailed annotation, all 49 clusters | `results/05_wnn_detailed_annotation.csv` |
 | 32 | Labeled WNN UMAP plot (detailed, numbered + grouped legend) | `results/05_wnn_umap_detailed_labels.png` |
-
-WNN broad lineage breakdown (141,852 cells): Monocyte 43,419 · CD4 T
-38,068 · CD8 T 25,065 · NK 16,259 · B cell 12,602 · MAIT 2,621 · gdT
-1,350 · DC 986 · Platelet 711 · Proliferating 547 · HSPC 148 · ILC 42 ·
-Erythrocyte 34.
-
-Having both modalities' evidence together at this stage resolved several
-calls neither single-modality analysis could on its own — e.g. cluster
-12's inflammatory-monocyte signature (`TNF`/`CCL3`/`NFKBIA` RNA +
-`CD64`/`CD86`/`CD11b` ADT) is unambiguous here, and clear Platelet
-(`ITGA2B`/`PF4`/`PPBP` + `CD42b`/`CD61`) and CD56bright NK (`XCL1`/`XCL2`
-+ `CD56`/`CD117`) populations emerged that neither single-modality pass
-isolated cleanly.
-
-One finding worth noting explicitly: a 34-cell "Erythrocyte" cluster
-embeds spatially *inside* the CD4 T region rather than as its own
-island. Checked directly rather than assumed — its markers show real
-hemoglobin/RBC signal (`HBB`, `HBA1/2`, `CD235a`) *mixed with* CD4 T
-signal (`CD4-2` protein present too), the signature of ambient RNA/
-protein contamination (lysed RBCs releasing free hemoglobin into
-droplets that also contain a real CD4 T cell) rather than a labeling
-error. Kept as its own category, matching the reference paper's own
-convention of reporting a small Erythrocyte class.
 
 ### Methodology notes
 
@@ -231,6 +187,23 @@ Conda env `citeseq-pipeline` (R 4.5.3), built package-by-package as each
 step needed something new. Location is whatever `conda`/`mamba` uses by
 default on your machine (typically `<conda install prefix>/envs/citeseq-pipeline`).
 
+Dependencies are pinned in `renv.lock` (147 packages, R version: 4.5.3).  From the project root, open R:
+
+```
+install.package("renv")  # if not already installed
+renv::restore()
+```
+
+Or from the terminal:
+
+```
+Rscript -e 'renv::restore()'
+```
+
+renv::restore() recreates the project's package environment using the versions 
+recorded in `renv.lock` without modifying global R package library.
+
+
 Key package versions:
 
 | # | Package | Version | Source |
@@ -239,6 +212,7 @@ Key package versions:
 | 2 | `Seurat` | 5.5.1 | conda-forge |
 | 3 | `Matrix` | 1.7.5 | conda-forge |
 | 4 | `DoubletFinder` | 2.0.6 | GitHub (`chris-mcginnis-ucsf/DoubletFinder`) |
+
 
 ### `renv.lock`
 
