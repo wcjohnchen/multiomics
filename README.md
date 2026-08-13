@@ -219,41 +219,64 @@ Key package versions:
 ## 4. Analysis Workflow
 
 ```
-Raw Data
-(161,764 cells, 33,538 genes · 228 antibodies)
-        │
-        ▼
-RNA QC / Filtering
-(Cell filter, gene filter, mito filter,
- quantile trim, doublet removal -- seed=42)
-        │
-        ├──────────────────────────────┐
-        │                              │
-        ▼                              ▼
-141,852 cells                   ADT Filtering
-17,808 genes · 228 antibodies   (Antibody filter, cell filter --
-        │                        side-branch, feeds nothing downstream)
-        │
-        ├──────────────────────────────┐
-        │                              │
-        ▼                              ▼
-RNA Processing                  ADT Processing
-(LogNormalize, HVG,             (CLR normalize, scale + PCA,
- scale + PCA, UMAP,              UMAP, cluster: 29,
- cluster: 24, annotate: 12)      annotate: 9)
-        │                              │
-        └──────────────┬───────────────┘
-                        │
-                        ▼
-              WNN Integration
-    (FindMultiModalNeighbors, UMAP,
-     cluster: 49, annotate: 13 broad
-     + 49 detailed)
-                        │
-                        ▼
-              6 Final Figures
-                (report.html)
+Read RNA raw matrix              Read ADT raw matrix
+(33,538 genes)                   (228 antibodies)
+        │                                 │
+        └────────────────┬────────────────┘
+                          │
+                          ▼
+           Barcode alignment check
+      (stopifnot: identical cell order)
+                          │
+                          ▼
+         Build combined Seurat object
+          (RNA + ADT assays, shared cells)
+                  161,764 cells
+                          │
+                          ▼
+              RNA QC / Filtering
+    (Cell filter, gene filter, mito filter,
+      quantile trim -- 153,822 cells)
+                          │
+           ┌──────────────┴──────────────┐
+           │                              │
+           ▼                              ▼
+   Doublet Removal                 ADT Filtering
+(DoubletFinder + HTO,           (Antibody filter, cell filter --
+ per-lane, union -- seed=42)     both non-binding here: 0 removed)
+           │                              │
+           ▼                              ▼
+   141,852 cells                    [DEAD END --
+17,808 genes · 228 antibodies       nothing downstream reads
+           │                         this checkpoint today]
+           ▼
+      RNA Processing
+(LogNormalize, HVG, scale + PCA,
+ UMAP, cluster: 24, annotate: 12)
+           │
+           ▼
+      ADT Processing
+(CLR normalize, scale + PCA, UMAP,
+ cluster: 29, annotate: 9 -- reads the
+ RNA-annotated object above, not the
+ 141,852-cell checkpoint directly)
+           │
+           ▼
+     WNN Integration
+(FindMultiModalNeighbors on pca + apca,
+ UMAP, cluster: 49, annotate: 13 broad
+ + 49 detailed)
+           │
+           ▼
+     6 Final Figures
+      (report.html)
 ```
+
+**Note on the current architecture**: RNA Processing and ADT Processing are not
+actually parallel branches — `04_adt_umap.R` reads `03_rna_seurat_object_annotated.rds`
+(RNA processing's own output), not the shared 141,852-cell checkpoint directly. The real
+chain today is linear (`01 → 03 → 04 → 05`), with ADT Filtering (`02_adt_qc_filter.R`)
+as the only true dead-end — its output is never read downstream.
 
 
 ## 5. Running the Analysis Workflow
