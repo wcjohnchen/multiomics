@@ -64,12 +64,11 @@ the two donor pools (`L_pool`: lanes `L1`–`L5` (67,090 cells); `E2_pool`: lane
 | # | Step | Before | After | Removed | Notes |
 |---|---|---|---|---|---|
 | 1 | Build Seurat object (RNA+ADT) | 161,764 cells | 161,764 cells | — | 33,538 genes, 228 antibodies |
-| 2 | Cell filter (≥200 genes/cell) | 161,764 cells| 161,764 cells| **0** | All cells retained |
+| 2 | Cell filter (≥200 genes/cell) | 161,764 cells| 161,764 cells| 0 | All cells retained |
 | 3 | Gene filter (≥100 cells/gene) | 33,538 genes | 17,808 genes | 15,730 genes | — |
-| 4 | Mito filter (<20% `percent.mt`) | 161,764 cells | 161,764 cells | **0** | All cells retained |
+| 4 | Mito filter (<20% `percent.mt`) | 161,764 cells | 161,764 cells | 0 | All cells retained |
 | 5 | Quantile trim (2–98%, per pool) | 161,764 cells | 153,822 cells | 7,942 cells | — |
-| 6 | RNA QC report figure | — | — | — | Raw object, threshold lines; 7-panel |
-| 9 | Doublet removal (DoubletFinder + HTO, union) | 153,822 | **141,852** | 11,970 | `seed=42`. DoubletFinder: 11,537 (per-lane); HTO: 508; overlap: 75. HTO calls read from `reference/hto_doublet_calls.csv` |
+| 9 | Doublet removal (DoubletFinder + HTO, union) | 153,822 cells | 141,852 cells | 11,970 cells | `seed=42`. Doublets were identified and removed independently within each sequencing lane: 11,537; HTO-based detection: 508; overlap: 75 |
 
 DoubletFinder per-lane breakdown (each lane gets its own PCA and its
 own expected doublet rate — 7.5% of that lane's cell count, `pN=0.25`,
