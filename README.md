@@ -32,9 +32,9 @@ final combined annotation.
 ^ Please manually download the raw data from NCBI GEO GSE164378 samples `GSM5008737` and `GSM5008738`, and place the files in the
 `data/` folder.
 
-The same Hao et al. series also has a third accession, `GSM5008739`
-(HTO), for hashtag-based sample demultiplexing — **not downloaded or
-processed here**.
+reference/hto_doublet_calls.csv contains per-cell hashtag oligonucleotide (HTO)-based doublet/singlet calls derived from 
+Hao et al. datasets (2021). It provides barcode-level annotations used in the pipeline to identify and 
+remove cells classified as HTO Doublets. <br>
 
 Barcodes carry a lane prefix identifying the 13 sequencing lanes across
 the two donor pools:
@@ -42,46 +42,6 @@ the two donor pools:
 - `L_pool`: lanes `L1`–`L5` (67,090 cells)
 - `E2_pool`: lanes `E2L1`–`E2L8` (94,674 cells)
 
-**Is `reference/hto_doublet_calls.csv` actually used? Yes.** It's read
-in `01_rna_qc_filter.R` (Step 7/7, doublet removal) — `hto_source <-
-file.path(project_dir, "reference", "hto_doublet_calls.csv")`, then
-loaded via `read.csv()` and joined onto the working object by barcode.
-Its `Doublet`/`Singlet` calls are unioned with DoubletFinder's own
-per-lane calls to decide which cells get removed (see the pipeline
-tables in "Computational Methods" below, step 9).
-
-**Where that file itself came from — the exact chain, not skipping a
-step:**
-
-1. **`pbmc_multimodal.h5seurat`** — Hao et al.'s own published
-   multimodal PBMC reference, an HDF5-format Seurat object (`.h5Seurat`,
-   loaded via the `SeuratDisk` package), publicly downloadable at
-   `https://atlas.fredhutch.org/data/nygc/multimodal/pbmc_multimodal.h5seurat`.
-   Contains the paper's own original, manually-curated cell-type and QC
-   annotations, including `celltype.l2 == "Doublet"` calls made using
-   their real hashtag (HTO) data.
-2. *(Historical step — not something you need to redo or access; the
-   CSV in step 3 is already the final, portable result.)* A separate,
-   independent analysis confirmed `GSM5008737`/`GSM5008738` (this
-   project's own raw data) share the *exact same barcodes, in the same
-   order*, as that reference — i.e. this dataset *is* the one behind
-   the paper's own reference release. That analysis then attached the
-   reference's metadata (`celltype.l1/l2/l3`, `donor`, `time`) directly
-   by barcode match — no label transfer or prediction involved —
-   producing an intermediate file, `citeseq_seurat_object_annotated.rds`:
-   a Seurat object, saved in R's native `.rds` binary format (not
-   `.h5Seurat`, not a spreadsheet).
-3. This project reads *that* `.rds` file (not the original
-   `.h5Seurat` reference directly) and extracts just the two columns
-   actually needed — barcode and the Doublet/Singlet flag — into the
-   small, portable `reference/hto_doublet_calls.csv` committed here.
-
-So: `hto_doublet_calls.csv` is a plain CSV, but the file it was
-extracted from was an `.rds`-serialized Seurat object — and that
-object's own `Doublet` calls trace back one further step to the paper's
-`.h5Seurat` reference. One citation covers the whole chain, since every
-step after the raw GEO data is Hao et al.'s own work — see "References"
-below.
 
 
 ## 2. Computational Methods
