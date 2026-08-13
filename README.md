@@ -52,19 +52,14 @@ the two donor pools (`L_pool`: lanes `L1`–`L5` (67,090 cells); `E2_pool`: lane
 
 | Script | Description |
 |---|---|
-| `run_pipeline.sh` | Master script — runs all 5 scripts below in order, stops on first failure |
-| `01_rna_qc_filter.R` | Build Seurat object → RNA QC → filter → doublet removal |
-| `02_adt_qc_filter.R` | ADT QC → filter |
-| `03_rna_umap.R` | RNA normalize → UMAP → cluster → annotate |
-| `04_adt_umap.R` | ADT normalize → UMAP → cluster → annotate |
-| `05_wnn_integration.R` | WNN integrate → UMAP → cluster → annotate (broad + detailed) |
+| `run_pipeline.sh` | Master script |
+| `01_rna_qc_filter.R` | RNA QC |
+| `02_adt_qc_filter.R` | ADT QC |
+| `03_rna_umap.R` | RNA UMAP |
+| `04_adt_umap.R` | ADT UMAP |
+| `05_wnn_integration.R` | WNN-based multimodal Integration |
 
-Only each phase's FINAL object is saved as an `.rds` checkpoint; the old
-per-step checkpoints only existed for resuming between separate script
-invocations, which doesn't apply once combined. Each step's own filter
-CSV / figure output is still written individually.
-
-### RNA QC, filtering, doublet removal — `01_rna_qc_filter.R`
+### RNA QC
 
 | # | Step | Before | After | Removed | Notes |
 |---|---|---|---|---|---|
@@ -100,14 +95,14 @@ own expected doublet rate — 7.5% of that lane's cell count, `pN=0.25`,
 This 11,537 is unioned with the 508 HTO-based calls (not lane-grouped)
 to reach the final 11,970 doublets removed.
 
-### ADT filtering — `02_adt_qc_filter.R`
+### ADT QC
 
 | # | Step | Before | After | Removed | Notes |
 |---|---|---|---|---|---|
 | 7 | Antibody filter (≥100 cells/Ab) + cell filter (≥20 counts/cell) | 153,822 | 153,822 | **0** | Both non-binding by a wide margin. This checkpoint is not read by any later step (steps 9 and 18 both branch from earlier files) — kept for its QC figure/filter record only |
 | 8 | ADT QC report figure | — | — | — | Raw object, threshold lines; 6-panel |
 
-### RNA processing (normalization → annotation) — `03_rna_umap.R`
+### RNA UMAP
 
 | # | Step | Result |
 |---|---|---|
@@ -131,7 +126,7 @@ not "T cell (activated)". Cluster 22 (`KIT`/`GATA3`/`IL1R1`/`SPINK2`)
 embeds within the CD8 T/NK lymphoid branch, far from the true HSPC
 cluster — relabeled ILC, not "HSPC/Basophil".
 
-### ADT processing (normalization → annotation) — `04_adt_umap.R`
+### ADT UMAP
 
 | # | Step | Result |
 |---|---|---|
@@ -153,7 +148,7 @@ gene markers for several lineages — `TCR-Va7.2` (MAIT), `TCR-Vg9`/
 CD8 T), and `CD141` (cDC1) are all near-definitive single-protein
 identity markers.
 
-### WNN integration (the combined analysis) — `05_wnn_integration.R`
+### WNN-based multimodal integration
 
 | # | Step | Result |
 |---|---|---|
