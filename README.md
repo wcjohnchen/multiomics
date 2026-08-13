@@ -554,15 +554,13 @@ multiomics/
 `results/` contains the following files:
 
 - **`01_rna_*`** — RNA QC report figure (`.png`), per-filter CSVs
-  (cell/gene/mito/quantile), and the doublet-removal summary CSV.
-- **`02_adt_*`** — ADT filter CSV and the ADT QC report figure (`.png`).
-- **`03_rna_*`** — RNA cluster markers CSV, broad annotation CSV, and
-  the labeled RNA UMAP figure (`.png`).
-- **`04_adt_*`** — ADT cluster markers CSV, broad annotation CSV, and
-  the labeled ADT UMAP figure (`.png`).
-- **`05_wnn_*`** — RNA and ADT cluster markers CSVs, broad and detailed
-  annotation CSVs, and the broad- and detailed-labeled WNN UMAP figures
-  (`.png`).
+  (cell/gene/mito/quantile), and the doublet-removal summary CSV
+- **`02_adt_*`** — ADT filter CSV and the ADT QC report figure (`.png`)
+- **`03_rna_*`** — RNA cluster markers CSV, broad annotation CSV, and the labeled RNA UMAP figure (`.png`).
+- **`04_adt_*`** — ADT cluster marker genes (`.csv`), broad cluster annotation (`.csv`), and
+  ADT UMAP figure (`.png`)
+- **`05_wnn_*`** — RNA and ADT cluster marker genes (`.csv`), broad and detailed cluster
+  annotation (`.csv`), and WNN UMAP figures (`.png`)
 
 ## 8. Notes
 
