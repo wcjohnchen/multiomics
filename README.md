@@ -63,11 +63,11 @@ the two donor pools (`L_pool`: lanes `L1`–`L5` (67,090 cells); `E2_pool`: lane
 
 | # | Step | Before | After | Removed | Notes |
 |---|---|---|---|---|---|
-| 1 | Build Seurat object (RNA+ADT) | — | 161,764 cells | — | 33,538 genes, 228 antibodies, `lane`/`pool` metadata from barcode prefix |
-| 2 | Cell filter (≥200 genes/cell) | 161,764 | 161,764 | **0** | Non-binding — min `nFeature_RNA` is 501 |
-| 3 | Gene filter (≥100 cells/gene) | 33,538 genes | 17,808 genes | 15,730 genes | Matches `citeseq_learn_v2`'s exact final gene count |
-| 4 | Mito filter (<20% `percent.mt`) | 161,764 | 161,764 | **0** | Non-binding — max is 15.0% |
-| 5 | Quantile trim (2–98%, per pool) | 161,764 | 153,822 | 7,942 | Per-pool percentiles on `nCount_RNA`/`nFeature_RNA`. Checkpoint saved here (unlike steps 2-4) — `02_adt_qc_filter.R` reads it directly |
+| 1 | Build Seurat object (RNA+ADT) | 161,764 cells | 161,764 cells | — | 33,538 genes, 228 antibodies |
+| 2 | Cell filter (≥200 genes/cell) | 161,764 cells| 161,764 cells| **0** | All cells retained |
+| 3 | Gene filter (≥100 cells/gene) | 33,538 genes | 17,808 genes | 15,730 genes | — |
+| 4 | Mito filter (<20% `percent.mt`) | 161,764 cells | 161,764 cells | **0** | All cells retained |
+| 5 | Quantile trim (2–98%, per pool) | 161,764 cells | 153,822 cells | 7,942 cells | — |
 | 6 | RNA QC report figure | — | — | — | Raw object, threshold lines; 7-panel |
 | 9 | Doublet removal (DoubletFinder + HTO, union) | 153,822 | **141,852** | 11,970 | `seed=42`. DoubletFinder: 11,537 (per-lane); HTO: 508; overlap: 75. HTO calls read from `reference/hto_doublet_calls.csv` |
 
