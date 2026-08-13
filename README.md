@@ -53,13 +53,13 @@ of the numbered steps described below (originally built and verified as
 32 separate one-step scripts, then combined — each combine checked to
 produce numerically identical results to running its separate scripts):
 
-| Combined script | Covers steps | Phase |
-|---|---|---|
-| `01_rna_qc_filter.R` | 1–6, 9 | Build Seurat object → RNA QC → filter → doublet removal |
-| `02_adt_qc_filter.R` | 7–8 | ADT QC → filter |
-| `03_rna_umap.R` | 10–17 | RNA normalize → UMAP → cluster → annotate |
-| `04_adt_umap.R` | 18–24 | ADT normalize → UMAP → cluster → annotate |
-| `05_wnn_integration.R` | 25–32 | WNN integrate → UMAP → cluster → annotate (broad + detailed) |
+| Script | Description |
+|---|---|
+| `01_rna_qc_filter.R` | Build Seurat object → RNA QC → filter → doublet removal |
+| `02_adt_qc_filter.R` | ADT QC → filter |
+| `03_rna_umap.R` | RNA normalize → UMAP → cluster → annotate |
+| `04_adt_umap.R` | ADT normalize → UMAP → cluster → annotate |
+| `05_wnn_integration.R` | WNN integrate → UMAP → cluster → annotate (broad + detailed) |
 
 Only each phase's FINAL object is saved as an `.rds` checkpoint; the old
 per-step checkpoints only existed for resuming between separate script
