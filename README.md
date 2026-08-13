@@ -504,21 +504,21 @@ throughout this README exactly).
 ```
 multiomics/
 ├── README.md
-├── report.html
-├── Snakefile                       # alternative to scripts/run_pipeline.sh
-├── .Rprofile                       # source("renv/activate.R")
+├── report.html                     # interactive report
+├── Snakefile                       # optional Snakemake workflow
+├── .Rprofile                       # activates renv for this project
 ├── renv.lock                       # 147 packages, exact versions, R 4.5.3
-├── renv/
+├── renv/                           # renv infrastructure
 │   ├── activate.R
-│   ├── settings.json                # external.libraries left empty -- see renv.lock section
-│   └── .gitignore                   # excludes library/ (local-machine-specific)
+│   ├── settings.json                
+│   └── .gitignore                   
 ├── data/                            
-│   ├── GSM5008737_RNA_3P-{barcodes,features,matrix}...
-│   └── GSM5008738_ADT_3P-{barcodes,features,matrix}...
+│   ├── GSM5008737 RNA_3P {barcodes,features,matrix}^  # manually download
+│   └── GSM5008738 ADT_3P {barcodes,features,matrix}^  # manually download
 ├── reference/
 │   ├── KEGG_RIBOSOME.txt          # ribosomal gene reference list
-│   └── hto_doublet_calls.csv      # barcode -> HTO-based Doublet/Singlet call (161,764 rows, ~5 MB)
-├── results/                        # figures save here too, alongside their data
+│   └── hto_doublet_calls.csv      # HTO-based doublet/singlet calls
+├── results/                       # figures save here too, alongside their data
 │   ├── 01_rna_seurat_object_raw.rds
 │   ├── 01_rna_qc_report_summary.png
 │   ├── 01_rna_qc_filter_cell.csv
@@ -540,24 +540,13 @@ multiomics/
 │   ├── 05_wnn_detailed_annotation.csv      + 05_wnn_seurat_object_detailed.rds
 │   └── 05_wnn_umap_detailed_labels.png
 └── scripts/
-    ├── run_pipeline.sh         (master script)
+    ├── run_pipeline.sh            (master script)
     ├── 01_rna_qc_filter.R      
     ├── 02_adt_qc_filter.R      
     ├── 03_rna_umap.R           
     ├── 04_adt_umap.R           
     └── 05_wnn_integration.R    
 ```
-
-`logs/` (created on first run of `run_pipeline.sh`) holds one timestamped
-log file per step per run.
-
-`results/*.rds` totals ~31 GB. `05_wnn_seurat_object_detailed.rds` (the
-final checkpoint) is cumulative — since every step added to the same
-growing object rather than replacing it, this single file alone contains
-everything: all filters, both single-modality analyses in full, and the
-complete WNN integration/clustering/annotation. Everything before it is
-kept for resumability and auditability, not because later steps still
-need it.
 
 
 ## 7. Output Files
