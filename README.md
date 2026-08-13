@@ -684,13 +684,10 @@ click-to-zoom lightbox, built in the exact format of
 
 ## 8. Notes
 
-Code was developed with assistance from Claude, an AI coding assistant,
-based on author-defined specifications, analytical objectives, and
-methodological decisions. The generated code was iteratively refined,
-reviewed by the author, and validated by re-running the full pipeline
-end-to-end and cross-checking outputs against `citeseq_learn_v2`'s
-independently-established results (e.g. the final RNA gene count and
-per-lane doublet counts described in "Computational Methods" above).
+Code was developed with assistance from Claude, an AI coding assistant, 
+based on author-defined step-by-step specifications, analytical objectives, and methodological 
+decisions. The generated code was iteratively refined, reviewed by the author, and 
+validated by reproducing and comparing with major results reported in the original publication.
 
 
 ## 9. References
