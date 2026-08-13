@@ -511,13 +511,12 @@ multiomics/
 ├── renv/
 │   ├── activate.R
 │   ├── settings.json                # external.libraries left empty -- see renv.lock section
-│   ├── .gitignore                   # excludes library/ (local-machine-specific)
-│   └── library/                     # only the renv bootstrap package itself (~7 MB)
-├── data/                            # not committed, see below (RNA matrix ~1.05 GB)
+│   └── .gitignore                   # excludes library/ (local-machine-specific)
+├── data/                            
 │   ├── GSM5008737_RNA_3P-{barcodes,features,matrix}...
 │   └── GSM5008738_ADT_3P-{barcodes,features,matrix}...
 ├── reference/
-│   ├── KEGG_RIBOSOME.txt          # ribosomal gene list, for percent.ribo
+│   ├── KEGG_RIBOSOME.txt          # ribosomal gene reference list
 │   └── hto_doublet_calls.csv      # barcode -> HTO-based Doublet/Singlet call (161,764 rows, ~5 MB)
 ├── results/                        # figures save here too, alongside their data
 │   ├── 01_rna_seurat_object_raw.rds
@@ -541,12 +540,12 @@ multiomics/
 │   ├── 05_wnn_detailed_annotation.csv      + 05_wnn_seurat_object_detailed.rds
 │   └── 05_wnn_umap_detailed_labels.png
 └── scripts/
-    ├── run_pipeline.sh         (runs all 5 scripts below in order)
-    ├── 01_rna_qc_filter.R      (steps 1-6, 9)
-    ├── 02_adt_qc_filter.R      (steps 7-8)
-    ├── 03_rna_umap.R           (steps 10-17)
-    ├── 04_adt_umap.R           (steps 18-24)
-    └── 05_wnn_integration.R    (steps 25-32)
+    ├── run_pipeline.sh         (master script)
+    ├── 01_rna_qc_filter.R      
+    ├── 02_adt_qc_filter.R      
+    ├── 03_rna_umap.R           
+    ├── 04_adt_umap.R           
+    └── 05_wnn_integration.R    
 ```
 
 `logs/` (created on first run of `run_pipeline.sh`) holds one timestamped
@@ -559,20 +558,6 @@ everything: all filters, both single-modality analyses in full, and the
 complete WNN integration/clustering/annotation. Everything before it is
 kept for resumability and auditability, not because later steps still
 need it.
-
-### If publishing this to GitHub
-
-**Do commit**: all R scripts, `Snakefile`, `README.md`, `report.html`,
-the 6 PNG figures and small CSVs that live together in `results/`
-(filter counts, marker tables, annotation tables — all well under a MB;
-only the `*.rds` files in that same folder are excluded), `reference/`
-(both files, ~5 MB total), and the `renv` setup (`renv.lock`, `.Rprofile`,
-`renv/activate.R`, `renv/settings.json`, `renv/.gitignore`). Add a
-`.gitignore` with `results/*.rds`, `data/*.gz`, and `.snakemake/`
-(Snakemake's own local run-tracking state, only relevant if you use the
-Snakemake alternative above — regenerates automatically, not portable
-across machines) — `renv/` already has its own nested `.gitignore`
-excluding `renv/library/`, the one part of it that's local-machine-specific.
 
 
 ## 7. Output Files
