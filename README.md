@@ -48,13 +48,11 @@ the two donor pools (`L_pool`: lanes `L1`–`L5` (67,090 cells); `E2_pool`: lane
 
 ## 2. Computational Methods
 
-`scripts/` contains 5 consolidated files, each covering a logical phase
-of the numbered steps described below (originally built and verified as
-32 separate one-step scripts, then combined — each combine checked to
-produce numerically identical results to running its separate scripts):
+`scripts/` contains the following files:
 
 | Script | Description |
 |---|---|
+| `run_pipeline.sh` | Master script — runs all 5 scripts below in order, stops on first failure |
 | `01_rna_qc_filter.R` | Build Seurat object → RNA QC → filter → doublet removal |
 | `02_adt_qc_filter.R` | ADT QC → filter |
 | `03_rna_umap.R` | RNA normalize → UMAP → cluster → annotate |
