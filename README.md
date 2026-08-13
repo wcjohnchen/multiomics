@@ -180,6 +180,12 @@ DoubletFinder per-lane breakdown:
   WNN: it makes the value of integration visible and checkable, not just
   assumed.
 
+- Single project-wide seed, **42**, used everywhere a seed is needed:
+`set.seed(42)` at the top of scripts with stochastic steps, and
+`seed.use = 42` explicitly passed to any Seurat function that accepts it
+(`RunPCA`, `RunUMAP`, `FindClusters`'s `random.seed`).
+
+
 
 ## 3. Environment Setup
 
@@ -212,99 +218,6 @@ Key package versions:
 | 2 | `Seurat` | 5.5.1 | conda-forge |
 | 3 | `Matrix` | 1.7.5 | conda-forge |
 | 4 | `DoubletFinder` | 2.0.6 | GitHub (`chris-mcginnis-ucsf/DoubletFinder`) |
-
-
-### `renv.lock`
-
-The project is also `renv`-tracked (147 packages, exact versions, R
-4.5.3), same as `RNA-seq`. `renv.lock` itself is fully portable — plain
-JSON, no local paths, safe to publish as-is. The DoubletFinder entry
-pins the exact GitHub commit SHA installed, not just a version tag.
-
-`renv/settings.json`'s `external.libraries` is deliberately left empty
-(`[]`) — not a local shortcut, a correctness requirement. renv's
-activation tries to *create* every path listed there if it doesn't
-already exist, and hard-crashes (`Error: failed to create directory...`)
-if it can't — which it never could on anyone else's machine, since the
-only path that would ever go there is specific to one machine's home
-directory. An empty list is the only setting that's safe on every clone.
-
-Local convenience without that risk comes from branching in
-`run_pipeline.sh` instead, auto-detected, no config needed either way:
-
-- **conda env `citeseq-pipeline` found** (the case on the machine this
-  was built on): activates it, then runs each script from `scripts/`
-  (no `.Rprofile` there) — renv never activates, packages come straight
-  from conda.
-- **no matching conda env** (a fresh GitHub clone): runs each script
-  from the **project root** instead, so renv's `.Rprofile` activates and
-  packages come from `renv/library/`.
-
-**No manual package setup needed either way.** In the second case,
-`run_pipeline.sh` checks whether Seurat/DoubletFinder are already
-installed and, if not, runs `renv::restore()` **automatically** before
-proceeding — including an automatic retry if the first attempt hits the
-parallel-install race condition described below. A downloader only
-needs to: clone the repo, drop the 6 raw data files into `data/`, and
-run `./scripts/run_pipeline.sh`. Verified end-to-end with a live test
-(fresh clone simulation, no conda, empty `renv/library/`): it detected
-the missing packages, ran `renv::restore()` unprompted, and moved
-straight into real pipeline execution with no manual step in between.
-
-Either way, each script's own `project_dir`/`data_dir` detection is
-based on the script's own file location, not the working directory, so
-which branch runs never affects where inputs/outputs are read or
-written.
-
-Two ways to get a working package set — `run_pipeline.sh` picks
-automatically per above, but either can also be run manually first if
-preferred:
-
-**Recreate via conda-forge** (fast, prebuilt binaries, matches how this
-env was actually built) — pins the 12 key packages above by exact
-version, plus DoubletFinder's exact GitHub commit:
-```
-mamba create -n citeseq-pipeline -c conda-forge \
-  r-base=4.5.3 r-seurat=5.5.1 r-seuratobject=5.4.0 r-matrix=1.7_5 \
-  r-ggplot2=4.0.3 r-patchwork=1.3.2 r-dplyr=1.2.1 r-ggrepel=0.9.8 \
-  r-scales=1.4.0 r-viridislite=0.4.3 r-data.table=1.18.4 \
-  r-remotes=2.5.0 r-fields=17.3 r-rocr=1.0_12
-conda activate citeseq-pipeline
-Rscript -e 'remotes::install_github("chris-mcginnis-ucsf/DoubletFinder", ref = "1b244d8f0d54b4b1cb4365639931bbb16f01e1cd")'
-```
-The remaining ~135 packages in `renv.lock` are transitive dependencies
-(Rcpp, RcppArmadillo, uwot, igraph, etc.) — this command doesn't pin
-those individually; conda's solver picks compatible versions from
-conda-forge at install time, which won't necessarily match
-`renv.lock`'s exact versions package-for-package, just functionally
-compatible ones. That's the real tradeoff versus the option below.
-
-**Or `renv::restore()`** (the only path that reproduces all 147 package
-versions exactly, byte-for-byte matching `renv.lock` — but compiles from
-source, so expect significantly longer, and a working C++/Fortran
-toolchain):
-```
-Rscript -e 'renv::restore()'
-```
-
-Actually tested end-to-end (isolated scratch copy, plain system R, no
-conda) — `renv::restore()` works, but **may fail on the first attempt**
-with `Error: failed to install "Seurat", "DoubletFinder", ...` due to a
-parallel-install race: renv installs packages concurrently, and a few
-(`crosstalk`, `gridExtra`, `scattermore`) can start building before
-`rlang` — one of their own dependencies — finishes compiling elsewhere.
-**Just run `Rscript -e 'renv::restore()'` again** — the second attempt
-reuses everything already built (`renv`'s package cache persists across
-runs), so it finishes in under 5 minutes and succeeds cleanly. Confirmed
-by actually hitting this failure, retrying, and verifying `library(Seurat)`
-and `library(DoubletFinder)` both load correctly afterward.
-
-### Reproducibility / seeding
-
-Single project-wide seed, **42**, used everywhere a seed is needed:
-`set.seed(42)` at the top of scripts with stochastic steps, and
-`seed.use = 42` explicitly passed to any Seurat function that accepts it
-(`RunPCA`, `RunUMAP`, `FindClusters`'s `random.seed`).
 
 
 ## 4. Analysis Workflow
