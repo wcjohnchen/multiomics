@@ -575,20 +575,6 @@ need it.
 
 ### If publishing this to GitHub
 
-**Do not commit `results/*.rds`.** They total ~31 GB, and every single
-one already exceeds GitHub's 100 MB per-file limit on its own (smallest
-is 750 MB) — a plain `git push` would fail outright, and Git/Git-LFS
-aren't built for binaries at this scale regardless. They're also fully
-reproducible: the raw data is public (GEO `GSM5008737`/`GSM5008738`), and
-every `.rds` regenerates by running the 5 consolidated scripts in order
-(`01_rna_qc_filter.R` → `02_adt_qc_filter.R` → `03_rna_umap.R` →
-`04_adt_umap.R` → `05_wnn_integration.R`).
-
-**Do not commit `data/*.gz` either.** The RNA matrix alone is ~1.05 GB
-(over GitHub's 100 MB limit); the ADT matrix is right at the edge
-(~100 MB). Same reasoning as `results/*.rds` — public on GEO, not
-something git should carry.
-
 **Do commit**: all R scripts, `Snakefile`, `README.md`, `report.html`,
 the 6 PNG figures and small CSVs that live together in `results/`
 (filter counts, marker tables, annotation tables — all well under a MB;
