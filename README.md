@@ -551,8 +551,7 @@ multiomics/
 
 ## 7. Output Files
 
-In `results/`, produced by the 5 scripts described in "Computational
-Methods" above:
+`results/` contains the following files:
 
 - **`01_rna_*`** — raw and quantile-trimmed Seurat object checkpoints
   (`.rds`), the RNA QC report figure, per-filter CSVs (cell/gene/mito/
