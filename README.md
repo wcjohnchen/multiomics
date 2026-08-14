@@ -91,10 +91,6 @@ DoubletFinder per-lane breakdown:
 
 ### ADT QC
 
-Runs on RNA's final doublet-filtered population (141,852 cells), not the
-earlier pre-doublet checkpoint — see "Analysis Workflow" above. Verified
-via a real full pipeline re-run (2026-08-13).
-
 | Step | Before | After | Removed | Notes |
 |---|---|---|---|---|
 | Cell filter (≥20 Ab counts/cell) | 141,852 cells | **141,852 cells** | 0 | All cells retained |
