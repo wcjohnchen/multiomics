@@ -222,7 +222,6 @@ Key package versions:
 
 ## 4. Analysis Workflow
 
-<div align="center">
 
 ```
    Read RNA raw matrix              Read ADT raw matrix
@@ -256,8 +255,6 @@ Key package versions:
           (FindMultiModalNeighbors on RNA PCA
                    + ADT PCA, UMAP)
 ```
-
-</div>
 
 
 ## 5. Running the Analysis Workflow
