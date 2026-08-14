@@ -224,24 +224,23 @@ Key package versions:
 
 
 ```
-   Read RNA raw matrix              Read ADT raw matrix
+       RNA Matrix                      ADT Matrix
            │                               │
            └───────────────┬───────────────┘
                            │
                            ▼
-                Combined Seurat object
+                Combined Seurat Object
                            │
                            ▼
                         RNA QC
-       (Cell/gene/mitochondria/quantile filter,
-                  doublet detection)
+   (Cell/gene/mitochondria/quantile filter, doublet detection)
                            │
            ┌───────────────┴───────────────┐
            │                               │
            ▼                               ▼
      RNA Processing                     ADT QC
- (Log Normalization, HVG,       (Cell/antibody
-     scale, PCA, UMAP)                filter)
+ (Log Normalization, HVG,       (Cell/antibody filter)
+     scale, PCA, UMAP)                     │
            │                               │
            │                               ▼
            │                        ADT Processing
@@ -252,8 +251,7 @@ Key package versions:
                            │
                            ▼
                     WNN Integration
-          (FindMultiModalNeighbors on RNA PCA
-                   + ADT PCA, UMAP)
+   (FindMultiModalNeighbors on RNA PCA + ADT PCA, UMAP)
 ```
 
 
