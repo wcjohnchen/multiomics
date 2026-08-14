@@ -224,61 +224,34 @@ Key package versions:
 
 ```
 Read RNA raw matrix              Read ADT raw matrix
-(33,538 genes)                   (228 antibodies)
         │                                 │
         └────────────────┬────────────────┘
-                          │
-                          ▼
-         Build combined Seurat object
-          (RNA + ADT assays, shared cells
-           -- same droplet, same barcode)
-                  161,764 cells
-                          │
-                          ▼
-              RNA QC / Filtering
-    (Cell filter, gene filter, mito filter,
-      quantile trim -- 153,822 cells)
-                          │
-                          ▼
-               Doublet Removal
-     (DoubletFinder + HTO, per-lane, union
-          seed=42 -- 141,852 cells)
-                          │
-           ┌──────────────┴──────────────┐
-           │                              │
-           ▼                              ▼
-    RNA Processing                 ADT Filtering
-(LogNormalize, HVG,              (Antibody filter, cell
- scale + PCA, UMAP,               filter -- both non-binding
- cluster: 24, annotate: 12)       here: 0 removed)
-           │                              │
-           │                              ▼
+                         │
+                         ▼
+              Combined Seurat object
+                         │
+                         ▼
+                       RNA QC
+    (Cell/gene/mitochondria/quantile filter, doublet detection)
+                         │
+           ┌─────────────┴────────────┐
+           │                          │
+           ▼                          ▼
+    RNA Processing                 ADT QC
+(Log Normalization, HVG,              (Cell/antibody filter)
+ scale + PCA, UMAP)
+           │                          │
+           │                          ▼
            │                       ADT Processing
-           │                     (CLR normalize, scale +
-           │                      PCA, UMAP, cluster: 29,
-           │                      annotate: 9)
-           │                              │
-           └──────────────┬───────────────┘
-                           │
-                           ▼
+           │                     (CLR normalization, scale +
+           │                      PCA, UMAP)
+           │                          │
+           └─────────────┬────────────┘
+                         │
+                         ▼
                  WNN Integration
-     (FindMultiModalNeighbors on pca + apca,
-      UMAP, cluster: 49, annotate: 13 broad
-      + 49 detailed)
-                           │
-                           ▼
-                  6 Final Figures
-                   (report.html)
+     (FindMultiModalNeighbors on pca + apca, UMAP)
 ```
-
-RNA Processing and ADT Filtering both branch independently from the same
-doublet-filtered checkpoint (141,852 cells) — `02_adt_qc_filter.R` reads
-`01_rna_seurat_object_doublet_filtered.rds` directly, and `04_adt_umap.R`
-reads `02_adt_seurat_object_filtered.rds`, never touching the RNA branch.
-The two branches only merge at `05_wnn_integration.R`, which loads both
-`03_rna_seurat_object_annotated.rds` (has `pca`) and
-`04_adt_seurat_object_annotated.rds` (has `apca`) and combines them
-before running `FindMultiModalNeighbors`.
 
 
 ## 5. Running the Analysis Workflow
