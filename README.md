@@ -222,36 +222,42 @@ Key package versions:
 
 ## 4. Analysis Workflow
 
+<div align="center">
+
 ```
-Read RNA raw matrix              Read ADT raw matrix
-        │                                 │
-        └────────────────┬────────────────┘
-                         │
-                         ▼
-              Combined Seurat object
-                         │
-                         ▼
-                       RNA QC
-    (Cell/gene/mitochondria/quantile filter, doublet detection)
-                         │
-           ┌─────────────┴────────────┐
-           │                          │
-           ▼                          ▼
-    RNA Processing                 ADT QC
-(Log Normalization, HVG,              (Cell/antibody filter)
- scale + PCA, UMAP)
-           │                          │
-           │                          ▼
-           │                       ADT Processing
-           │                     (CLR normalization, scale +
-           │                      PCA, UMAP)
-           │                          │
-           └─────────────┬────────────┘
-                         │
-                         ▼
-                 WNN Integration
-     (FindMultiModalNeighbors on pca + apca, UMAP)
+   Read RNA raw matrix              Read ADT raw matrix
+           │                               │
+           └───────────────┬───────────────┘
+                           │
+                           ▼
+                Combined Seurat object
+                           │
+                           ▼
+                        RNA QC
+       (Cell/gene/mitochondria/quantile filter,
+                  doublet detection)
+                           │
+           ┌───────────────┴───────────────┐
+           │                               │
+           ▼                               ▼
+     RNA Processing                     ADT QC
+ (Log Normalization, HVG,       (Cell/antibody
+     scale, PCA, UMAP)                filter)
+           │                               │
+           │                               ▼
+           │                        ADT Processing
+           │                  (CLR normalization, scale,
+           │                          PCA, UMAP)
+           │                               │
+           └───────────────┬───────────────┘
+                           │
+                           ▼
+                    WNN Integration
+          (FindMultiModalNeighbors on RNA PCA
+                   + ADT PCA, UMAP)
 ```
+
+</div>
 
 
 ## 5. Running the Analysis Workflow
