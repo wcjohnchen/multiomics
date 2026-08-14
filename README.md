@@ -98,16 +98,19 @@ DoubletFinder per-lane breakdown:
 
 ### RNA UMAP
 
-| Step | Result |
-|---|---|
-| `LogNormalize`, scale.factor=10000 | 141,852 cells × 17,808 genes |
-| `FindVariableFeatures`, vst, top 2000 | 2000 HVGs (top: HBB, HBA2, HBA1, CCL4L2, CCL20) |
-| `ScaleData` + `RunPCA`, 30 PCs, seed=42 | PC1 explains 52.4% of variance |
-| `RunUMAP` on `pca`, dims 1:30, seed=42 | `umap.rna` embedding (no plot) |
-| `FindNeighbors`+`FindClusters`, algorithm=3, resolution=0.5, seed=42 | 24 clusters |
-| `FindAllMarkers`, RNA restricted to 2000 HVGs | 7,446 marker rows |
-| Manual marker-based annotation | 12 broad categories |
-| Labeled RNA UMAP plot | `results/03_rna_umap_broad_labels.png` |
+The 141,852-cell, 17,808-gene RNA population was normalized with
+`LogNormalize` (scale.factor=10000), then restricted to the top 2000
+highly variable genes via `FindVariableFeatures` (`vst` method; top
+genes by variance included HBB, HBA2, HBA1, CCL4L2, and CCL20). These
+HVGs were scaled and reduced to 30 principal components with `RunPCA`
+(seed=42), where PC1 alone explained 52.4% of variance. `RunUMAP` was
+run on this `pca` reduction (dims 1:30, seed=42) to produce the
+`umap.rna` embedding, and `FindNeighbors`+`FindClusters` (algorithm=3,
+resolution=0.5, seed=42) grouped cells into 24 clusters. `FindAllMarkers`,
+restricted to the 2000 HVGs, identified 7,446 marker rows across those
+clusters, which were then manually annotated into 12 broad lineage
+categories based on marker signal. The final labeled RNA UMAP plot is
+saved to `results/03_rna_umap_broad_labels.png`.
 
 ### ADT UMAP
 
