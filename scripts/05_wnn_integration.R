@@ -12,13 +12,17 @@
 #      colliding with the existing RNA (`seurat_clusters`) and ADT
 #      (`adt_clusters`) columns already on this object (27)
 #   4. FindAllMarkers, both RNA (2000 HVGs) and ADT (228 antibodies) (28)
-#   5. Manual broad-lineage annotation using combined RNA+ADT marker
-#      evidence, 13 categories (29)
-#   6. Broad-level labeled UMAP plot (30)
-#   7. Manual detailed-level (per-cluster) annotation, 49 descriptive
-#      labels (31)
-#   8. Detailed-level UMAP plot: cluster numbers on the plot, colored by
-#      broad lineage, grouped legend below (32)
+#   5. Detailed-lineage annotation from Hao et al. 2021's own celltype.l2
+#      reference labels (majority vote per cluster) -- exact barcode
+#      match confirmed, reference/celltype_annotations.csv (29)
+#   6. Detailed-level labeled UMAP plot (30)
+#   7. Broad-lineage (celltype.l1, 8 categories) annotation + labeled
+#      UMAP plot -- same reference, same majority-vote method as step 5,
+#      shown alongside celltype.l2 for direct comparison of resolution
+#
+# No finer-grained (celltype.l3) annotation step -- see the note
+# above the final checkpoint for why celltype.l2 is the level that
+# actually suits this dataset's clustering, not celltype.l3.
 #
 # Only the FINAL object is saved as a checkpoint here (see README's
 # GitHub section on results/*.rds size). Each step's own CSV/figure
@@ -33,7 +37,6 @@ suppressMessages({
   library(dplyr)
   library(ggplot2)
   library(ggrepel)
-  library(patchwork)
 })
 
 set.seed(42)
@@ -87,10 +90,10 @@ rm(obj_rna, obj_adt); gc()
 log_msg("Merged: %d cells, reductions: %s", ncol(obj), paste(Reductions(obj), collapse = ", "))
 
 ## =============================================================================
-## Step 1/8 (script 25): FindMultiModalNeighbors (WNN)
+## Step 1/7 (script 25): FindMultiModalNeighbors (WNN)
 ## =============================================================================
 
-log_msg("Step 1/8: Running FindMultiModalNeighbors (WNN)...")
+log_msg("Step 1/7: Running FindMultiModalNeighbors (WNN)...")
 obj <- FindMultiModalNeighbors(
   obj,
   reduction.list = list("pca", "apca"),
@@ -102,18 +105,18 @@ log_msg("Modality weight summary (RNA):")
 print(summary(obj$RNA.weight))
 
 ## =============================================================================
-## Step 2/8 (script 26): UMAP on the WNN graph
+## Step 2/7 (script 26): UMAP on the WNN graph
 ## =============================================================================
 
-log_msg("Step 2/8: Running UMAP (WNN graph, seed=42)...")
+log_msg("Step 2/7: Running UMAP (WNN graph, seed=42)...")
 obj <- RunUMAP(obj, nn.name = "weighted.nn", reduction.name = "wnn.umap",
                reduction.key = "wnnUMAP_", seed.use = 42, verbose = FALSE)
 
 ## =============================================================================
-## Step 3/8 (script 27): FindClusters on wsnn
+## Step 3/7 (script 27): FindClusters on wsnn
 ## =============================================================================
 
-log_msg("Step 3/8: FindClusters (wsnn, algorithm=3/SLM, resolution=%.2f, seed=42)...",
+log_msg("Step 3/7: FindClusters (wsnn, algorithm=3/SLM, resolution=%.2f, seed=42)...",
         cluster_resolution)
 obj <- FindClusters(obj, graph.name = "wsnn", algorithm = 3,
                      resolution = cluster_resolution, random.seed = 42,
@@ -123,10 +126,10 @@ log_msg("Found %d clusters", n_clusters)
 print(table(obj$wnn_clusters))
 
 ## =============================================================================
-## Step 4/8 (script 28): FindAllMarkers, RNA (2000 HVGs) + ADT (228 antibodies)
+## Step 4/7 (script 28): FindAllMarkers, RNA (2000 HVGs) + ADT (228 antibodies)
 ## =============================================================================
 
-log_msg("Step 4/8: Running FindAllMarkers (RNA + ADT)...")
+log_msg("Step 4/7: Running FindAllMarkers (RNA + ADT)...")
 Idents(obj) <- obj$wnn_clusters
 
 rna_markers <- FindAllMarkers(obj, assay = "RNA", features = VariableFeatures(obj, assay = "RNA"),
@@ -144,122 +147,68 @@ write.csv(adt_markers, file.path(results_dir, "05_wnn_cluster_markers_ADT.csv"),
 log_msg("Saved results/05_wnn_cluster_markers_ADT.csv")
 
 ## =============================================================================
-## Step 5/8 (script 29): manual broad-lineage annotation
+## Step 5/7 (script 29): detailed-lineage annotation, from Hao et al. 2021's
+## own celltype.l2 reference labels (majority vote per WNN cluster) --
+## replaces the earlier manual marker-based lookup. See README
+## "Methodology notes" for why: this is a real, citable ground truth for
+## this exact dataset (confirmed by exact barcode match), not an AI/
+## human guess -- unlike the RNA-only and ADT-only annotation steps,
+## which stay manual on purpose (see README).
 ## =============================================================================
 
-log_msg("Step 5/8: Manual broad-lineage annotation...")
+log_msg("Step 5/7: Detailed-lineage annotation (Hao et al. 2021 celltype.l2, majority vote per cluster)...")
 
-broad_lineage_map <- c(
-  "0"="Monocyte","1"="CD4 T","2"="CD4 T","3"="CD4 T","4"="CD4 T",
-  "5"="NK","6"="Monocyte","7"="CD8 T","8"="B cell","9"="CD8 T",
-  "10"="Monocyte","11"="NK","12"="Monocyte","13"="B cell","14"="Monocyte",
-  "15"="CD8 T","16"="Monocyte","17"="CD8 T","18"="CD8 T","19"="Monocyte",
-  "20"="CD8 T","21"="NK","22"="Monocyte","23"="B cell","24"="Monocyte",
-  "25"="CD8 T","26"="CD4 T","27"="Monocyte","28"="MAIT","29"="Monocyte",
-  "30"="B cell","31"="CD8 T","32"="DC","33"="NK","34"="MAIT",
-  "35"="NK","36"="CD4 T","37"="gdT","38"="Platelet","39"="CD4 T",
-  "40"="gdT","41"="Monocyte","42"="Proliferating","43"="CD8 T","44"="NK",
-  "45"="HSPC","46"="ILC","47"="CD4 T","48"="Erythrocyte"
-)
+celltype_ref <- read.csv(file.path(project_dir, "reference", "celltype_annotations.csv"),
+                          stringsAsFactors = FALSE)
+match_idx <- match(colnames(obj), celltype_ref$barcode)
+stopifnot(!anyNA(match_idx))  # every cell in our data must exist in the reference
 
-confidence_map <- c(
-  "0"="high","1"="high","2"="high","3"="high","4"="high",
-  "5"="high","6"="high","7"="high","8"="high","9"="high",
-  "10"="high","11"="high","12"="high","13"="high","14"="high",
-  "15"="high","16"="medium","17"="high","18"="medium","19"="high",
-  "20"="high","21"="high","22"="high","23"="high","24"="high",
-  "25"="high","26"="high","27"="high","28"="high","29"="high",
-  "30"="high","31"="high","32"="high","33"="high","34"="high",
-  "35"="high","36"="low","37"="high","38"="high","39"="medium",
-  "40"="high","41"="high","42"="high","43"="high","44"="low",
-  "45"="high","46"="low","47"="high","48"="high"
-)
+obj$ref_celltype_l2 <- celltype_ref$celltype.l2[match_idx]
 
-key_markers_map <- c(
-  "0"="RNA: VSTM1,RETN / ADT: CD155,CD86,CD14",
-  "1"="RNA: CD40LG,IL7R / ADT: CD4,CD25,CD127,CD278",
-  "2"="RNA: CCR7,LEF1 / ADT: CD4,CD45RB,CD27",
-  "3"="RNA: CCR6,TNFRSF4 / ADT: CD4,CD25,CD45RO",
-  "4"="RNA: LEF1,CCR7 / ADT: CD4,CD3,CD27",
-  "5"="RNA: KLRC1,NCR1 / ADT: CD335,CD56,CD16",
-  "6"="RNA: SIGLEC1,MARCO / ADT: CD169,CD64,CD11b",
-  "7"="RNA: CD8A/B,LEF1,CCR7 / ADT: CD8,CD8a,CD27",
-  "8"="RNA: TCL1A,IGHD / ADT: IgD,CD21,CD20,IgM",
-  "9"="RNA: CD8A/B,CCR7 / ADT: CD8,CD45RA,CD27",
-  "10"="RNA: IL1A,CCL20,IL6 / ADT: CD36,CD64,CD11b",
-  "11"="RNA: KLRF1,NCR1,CD160 / ADT: CD335,CD158,CD56",
-  "12"="RNA: TNF,NFKBIA,CCL3 / ADT: CD36,CD64,CD86,CD11b",
-  "13"="RNA: TNFRSF13B,IGHG / ADT: CD20,CD21,CD19",
-  "14"="RNA: HLA-DQA2,IFI30 / ADT: CD155,CD64,CD192",
-  "15"="RNA: GZMH,EOMES,CD8A/B / ADT: CD8,TIGIT,CD8a",
-  "16"="RNA: CDKN1C,C1QA / ADT: CD86,CD123,CD16",
-  "17"="RNA: GZMK,CD8A/B / ADT: CD8,CD314,CD8a",
-  "18"="RNA: KLRC2,ZNF683,GZMH / ADT: CD8,CD158,CD56",
-  "19"="RNA: THBS1,PTGES,TNFAIP6 / ADT: CD36,CD64,CD11b",
-  "20"="RNA: GZMK,CD8A/B / ADT: CD8,CD103,CD314",
-  "21"="RNA: KLRC2,KIR2DL3,TRDC / ADT: CD158b,CD335,CD56",
-  "22"="RNA: IFI27,EGR2/3,SIGLEC1 / ADT: CD169,CD64,CD86",
-  "23"="RNA: TCL1A,IGHD,IGHM / ADT: CD20,IgD,CD19",
-  "24"="RNA: VMO1,CDKN1C,C1QA / ADT: CD123,CD16,CD86",
-  "25"="RNA: ZNF683,GZMH,GNLY / ADT: CD8,CD56,CD314",
-  "26"="RNA: LEF1,CCR7 / ADT: CD4,CD278,CD27",
-  "27"="RNA: TMEM144,CYP1B1 / ADT: CD169,CD36,CD64",
-  "28"="RNA: SLC4A10,GZMK,KLRB1 / ADT: TCR-Va7.2(MAIT),CD161",
-  "29"="RNA: RETN,S100A8/12 / ADT: CD155,CD1d,CD86",
-  "30"="RNA: IGHA2,IGHG,JCHAIN / ADT: CD20,IgM,CD19 (plasma-like)",
-  "31"="RNA: CD8A/B,NELL2 / ADT: CD8,CD314,CD45RA",
-  "32"="RNA: FCER1A,CD1C,CLEC10A,FLT3 / ADT: CD1c,HLA-DR (cDC2)",
-  "33"="RNA: XCL1,XCL2,NCAM1,KLRC1 / ADT: CD335,CD56,CD117 (CD56bright)",
-  "34"="RNA: SLC4A10,GZMK,CCR6 / ADT: TCR-Va7.2(MAIT),CD161",
-  "35"="RNA: KIR2DL1,NCAM1 / ADT: CD158b,CD158e1,CD56,CD57",
-  "36"="RNA: ZNF683,GZMH (mixed) / ADT: CD271,CD4,CD307e",
-  "37"="RNA: TRDV2,TRGV9,TRDC (gdT genes) / ADT: TCR-Vd2,TCR-Vg9",
-  "38"="RNA: GP9,ITGA2B,PF4,PPBP / ADT: CD42b,CD61,CD9 (platelet)",
-  "39"="RNA: GZMH,MAF,CD40LG / ADT: CD4,CD195,CD3",
-  "40"="RNA: TRGC1,TRDC,KLRC1 (gdT genes) / ADT: TCR-Vd2,TCR-Vg9",
-  "41"="RNA: C1QA/B,CDKN1C / ADT: CD86,CD172a,CD204",
-  "42"="RNA: MKI67,TOP2A,TYMS,BIRC5 (proliferating) / ADT: CD335,CD56",
-  "43"="RNA: CD8A/B,ITM2C,CCL5 / ADT: CD103,CD8,Integrin-7",
-  "44"="RNA: SPON2,KLRF1,FGFBP2 / ADT: CD319,VEGFR-3 (atypical)",
-  "45"="RNA: AVP,PROM1,CD34 / ADT: CD117,CD133,CD34 (HSPC)",
-  "46"="RNA: KIT,IL1R1,IL2RA,SPINK2 / ADT: CD117,CD25,CD161",
-  "47"="RNA: GATA3,TRAC,TRBC1,LTB / ADT: CD4,CD30,CD27",
-  "48"="RNA: HBB,HBA1/2,ALAS2 / ADT: CD235a/ab (erythrocyte)"
-)
+majority_label <- function(x) {
+  tab <- sort(table(x), decreasing = TRUE)
+  names(tab)[1]
+}
+pct_agreement <- function(x) {
+  tab <- sort(table(x), decreasing = TRUE)
+  # unname() is required: tab[1] carries its own category name (e.g.
+  # "CD14 Mono"), and if left in, sapply() below would concatenate it
+  # into the result's own name (e.g. "0.CD14 Mono" instead of "0"),
+  # breaking the later broad_pct_map[names(broad_lineage_map)] lookup
+  # -- confirmed by hitting exactly that bug (silent all-NA column).
+  unname(round(100 * tab[1] / sum(tab), 1))
+}
 
-clusters_present <- as.character(sort(unique(as.integer(as.character(obj$wnn_clusters)))))
-stopifnot(all(clusters_present %in% names(broad_lineage_map)))
+broad_lineage_map <- sapply(split(obj$ref_celltype_l2, obj$wnn_clusters), majority_label)
+broad_pct_map <- sapply(split(obj$ref_celltype_l2, obj$wnn_clusters), pct_agreement)
 
 obj$wnn_broad_lineage <- unname(broad_lineage_map[as.character(obj$wnn_clusters)])
-obj$wnn_annotation_confidence <- unname(confidence_map[as.character(obj$wnn_clusters)])
 
-log_msg("WNN broad lineage breakdown:")
+log_msg("WNN detailed lineage breakdown (from paper reference):")
 print(sort(table(obj$wnn_broad_lineage), decreasing = TRUE))
 
 annotation_table <- data.frame(
   cluster = names(broad_lineage_map),
   n_cells = as.integer(table(obj$wnn_clusters)[names(broad_lineage_map)]),
-  broad_lineage = broad_lineage_map,
-  confidence = confidence_map,
-  key_markers = key_markers_map,
+  broad_lineage = unname(broad_lineage_map),
+  pct_agreement = unname(broad_pct_map[names(broad_lineage_map)]),
   row.names = NULL
 )
 write.csv(annotation_table, file.path(results_dir, "05_wnn_broad_annotation.csv"), row.names = FALSE)
 log_msg("Saved results/05_wnn_broad_annotation.csv")
 
 ## =============================================================================
-## Step 6/8 (script 30): broad-level labeled UMAP plot
+## Step 6/7 (script 30): detailed-level labeled UMAP plot
 ## =============================================================================
 
-log_msg("Step 6/8: Building broad-level labeled UMAP plot...")
+log_msg("Step 6/7: Building detailed-level labeled UMAP plot...")
 
-lineage_colors <- c(
-  "CD4 T" = "#4C78A8", "CD8 T" = "#72B7B2", "gdT" = "#54A24B",
-  "MAIT" = "#B279A2", "NK" = "#E45756", "B cell" = "#F58518",
-  "Monocyte" = "#EECA3B", "DC" = "#BAB0AC", "HSPC" = "#000000",
-  "Platelet" = "#FF9DA6", "Erythrocyte" = "#8C564B", "Proliferating" = "#17BECF",
-  "ILC" = "#9C755F"
-)
+# Auto-generated to exactly match whatever categories the paper's
+# reference actually produces (no longer a fixed hand-picked set, since
+# celltype.l2 has 31 possible values -- only some appear as a cluster
+# majority here).
+broad_categories <- sort(unique(obj$wnn_broad_lineage))
+lineage_colors <- setNames(scales::hue_pal()(length(broad_categories)), broad_categories)
 
 embed <- Embeddings(obj, "wnn.umap")
 df_broad <- data.frame(UMAP_1 = embed[, 1], UMAP_2 = embed[, 2], broad_lineage = obj$wnn_broad_lineage)
@@ -268,20 +217,14 @@ centroids_broad <- df_broad %>%
   group_by(broad_lineage) %>%
   summarize(UMAP_1 = median(UMAP_1), UMAP_2 = median(UMAP_2), .groups = "drop")
 
-missing_colors <- setdiff(unique(df_broad$broad_lineage), names(lineage_colors))
-if (length(missing_colors) > 0) {
-  stop(sprintf("No color defined for broad_lineage categories: %s",
-               paste(missing_colors, collapse = ", ")))
-}
-
 p_broad <- ggplot(df_broad, aes(UMAP_1, UMAP_2, color = broad_lineage)) +
   geom_point(size = 0.15, alpha = 0.35) +
   geom_text_repel(data = centroids_broad, aes(x = UMAP_1, y = UMAP_2, label = broad_lineage),
                    inherit.aes = FALSE, color = "black", size = 5, fontface = "bold",
                    max.overlaps = 100, bg.color = "white", bg.r = 0.15, seed = 1) +
-  scale_color_manual(values = lineage_colors, name = "Broad Lineage") +
+  scale_color_manual(values = lineage_colors, name = "Detailed Lineage") +
   guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) +
-  labs(title = "WNN: Broad Level Cell Annotation", x = "UMAP 1", y = "UMAP 2") +
+  labs(title = "WNN: Detailed Level Cell Annotation", x = "UMAP 1", y = "UMAP 2") +
   theme_minimal(base_size = 13) +
   theme(panel.border = element_rect(color = "grey40", fill = NA),
         panel.grid = element_blank())
@@ -290,138 +233,86 @@ ggsave(file.path(figures_dir, "05_wnn_umap_broad_labels.png"), p_broad, width = 
 log_msg("Saved results/05_wnn_umap_broad_labels.png")
 
 ## =============================================================================
-## Step 7/8 (script 31): manual detailed-level (per-cluster) annotation
+## Step 7/7: broad-lineage annotation from celltype.l1 (8 categories) --
+## same reference, same majority-vote method as Step 5/7, kept alongside
+## celltype.l2 (not instead of it) for direct comparison. celltype.l1 was
+## tested and rejected as the *primary* annotation earlier (it merges
+## MAIT+gdT into "other T" and HSPC+ILC+Eryth into "other", losing real,
+## spatially-distinct populations visible on the UMAP) -- this plot
+## exists specifically to make that resolution loss visible, not as an
+## equally-valid alternative to Step 5/7.
 ## =============================================================================
 
-log_msg("Step 7/8: Manual detailed-level annotation...")
+log_msg("Step 7/7: Broad-lineage annotation (Hao et al. 2021 celltype.l1, majority vote per cluster)...")
 
-fine_label_map <- c(
-  "0"  = "Monocyte - Classical",
-  "1"  = "CD4 T - CXCR5+/ICOS+ (Tfh-like)",
-  "2"  = "CD4 T - Naive (CCR7+)",
-  "3"  = "CD4 T - CCR6+ (Th17-like)",
-  "4"  = "CD4 T - Naive subset 2",
-  "5"  = "NK - CD16+ CD56dim",
-  "6"  = "Monocyte - Non-classical/IFN-stimulated",
-  "7"  = "CD8 T - Naive",
-  "8"  = "B cell - Naive IgD+",
-  "9"  = "CD8 T - Naive subset 2",
-  "10" = "Monocyte - Inflammatory (IL1/IL6/CCL20)",
-  "11" = "NK - CD16+ (KLRF1+)",
-  "12" = "Monocyte - Inflammatory (TNF+)",
-  "13" = "B cell - Memory/class-switched",
-  "14" = "Monocyte - HLA-DQA2+",
-  "15" = "CD8 T - Cytotoxic/Effector (GZMH+EOMES+)",
-  "16" = "Monocyte - Non-classical CD16+",
-  "17" = "CD8 T - Effector Memory (GZMK+)",
-  "18" = "CD8 T - Adaptive/tissue-resident (KIR+)",
-  "19" = "Monocyte - Inflammatory subset 2",
-  "20" = "CD8 T - Tissue-resident (CD103+)",
-  "21" = "NK - Adaptive (KIR+)",
-  "22" = "Monocyte - IFN-stimulated",
-  "23" = "B cell - Naive subset 2",
-  "24" = "Monocyte - Non-classical subset 2",
-  "25" = "CD8 T - Terminal effector (GNLY+)",
-  "26" = "CD4 T - Naive subset 3",
-  "27" = "Monocyte - CYP1B1+",
-  "28" = "MAIT - subset 1",
-  "29" = "Monocyte - Classical subset 2",
-  "30" = "B cell - Plasmablast-like (JCHAIN+)",
-  "31" = "CD8 T - Naive subset 3",
-  "32" = "DC - cDC2",
-  "33" = "NK - CD56bright",
-  "34" = "MAIT - subset 2",
-  "35" = "NK - Adaptive (KIR+ CD57+)",
-  "36" = "CD4 T - CTL-like *",
-  "37" = "gdT - Vgamma9/Vdelta2",
-  "38" = "Platelet",
-  "39" = "CD4 T - Cytotoxic (GZMH+)",
-  "40" = "gdT - subset 2",
-  "41" = "Monocyte - Macrophage-like (C1Q+)",
-  "42" = "Proliferating - NK",
-  "43" = "CD8 T - Tissue-resident subset 2",
-  "44" = "NK - atypical *",
-  "45" = "HSPC - CD34+CD117+",
-  "46" = "ILC *",
-  "47" = "CD4 T - GATA3+ (Th2-like)",
-  "48" = "Erythrocyte (ambient RBC contamination)"
-)
+obj$ref_celltype_l1 <- celltype_ref$celltype.l1[match_idx]
 
-stopifnot(all(clusters_present %in% names(fine_label_map)))
-obj$wnn_fine_label <- unname(fine_label_map[as.character(obj$wnn_clusters)])
+l1_map <- sapply(split(obj$ref_celltype_l1, obj$wnn_clusters), majority_label)
+l1_pct_map <- sapply(split(obj$ref_celltype_l1, obj$wnn_clusters), pct_agreement)
 
-fine_table <- data.frame(
-  cluster = names(fine_label_map),
-  n_cells = as.integer(table(obj$wnn_clusters)[names(fine_label_map)]),
-  broad_lineage = unname(setNames(obj$wnn_broad_lineage, obj$wnn_clusters)[names(fine_label_map)]),
-  fine_label = fine_label_map,
+obj$wnn_l1_lineage <- unname(l1_map[as.character(obj$wnn_clusters)])
+
+log_msg("WNN celltype.l1 breakdown:")
+print(sort(table(obj$wnn_l1_lineage), decreasing = TRUE))
+
+l1_table <- data.frame(
+  cluster = names(l1_map),
+  n_cells = as.integer(table(obj$wnn_clusters)[names(l1_map)]),
+  l1_lineage = unname(l1_map),
+  pct_agreement = unname(l1_pct_map[names(l1_map)]),
   row.names = NULL
 )
-write.csv(fine_table, file.path(results_dir, "05_wnn_detailed_annotation.csv"), row.names = FALSE)
-log_msg("Saved results/05_wnn_detailed_annotation.csv")
+write.csv(l1_table, file.path(results_dir, "05_wnn_l1_annotation.csv"), row.names = FALSE)
+log_msg("Saved results/05_wnn_l1_annotation.csv")
 
-## =============================================================================
-## Step 8/8 (script 32): detailed-level labeled UMAP plot
-## =============================================================================
+# Display-only relabel for the plot -- these are the paper's real
+# celltype.l1 values (kept as-is in results/05_wnn_l1_annotation.csv
+# above, unchanged): "other T" is a vague catch-all covering three
+# distinct T-cell subtypes (gdT/MAIT/dnT, confirmed by cross-referencing
+# the reference's own celltype.l2 column); "other" is just capitalized
+# for consistency with the other title-case legend entries (CD4 T, CD8
+# T, etc.). Relabeled here for the plot only.
+l1_display_map <- c("other T" = "dnT/gdT/MAIT", "other" = "Other")
+l1_display <- ifelse(obj$wnn_l1_lineage %in% names(l1_display_map),
+                      unname(l1_display_map[obj$wnn_l1_lineage]),
+                      obj$wnn_l1_lineage)
 
-log_msg("Step 8/8: Building detailed-level labeled UMAP plot...")
+l1_categories <- sort(unique(l1_display))
+l1_colors <- setNames(scales::hue_pal()(length(l1_categories)), l1_categories)
 
-df_fine <- data.frame(UMAP_1 = embed[, 1], UMAP_2 = embed[, 2],
-                       cluster = as.character(obj$wnn_clusters),
-                       broad_lineage = obj$wnn_broad_lineage)
+df_l1 <- data.frame(UMAP_1 = embed[, 1], UMAP_2 = embed[, 2], l1_lineage = l1_display)
 
-centroids_fine <- df_fine %>%
-  group_by(cluster) %>%
-  summarize(UMAP_1 = median(UMAP_1), UMAP_2 = median(UMAP_2),
-            broad_lineage = dplyr::first(broad_lineage), .groups = "drop")
+centroids_l1 <- df_l1 %>%
+  group_by(l1_lineage) %>%
+  summarize(UMAP_1 = median(UMAP_1), UMAP_2 = median(UMAP_2), .groups = "drop")
 
-p_main <- ggplot(df_fine, aes(UMAP_1, UMAP_2, color = broad_lineage)) +
+p_l1 <- ggplot(df_l1, aes(UMAP_1, UMAP_2, color = l1_lineage)) +
   geom_point(size = 0.15, alpha = 0.35) +
-  geom_text_repel(data = centroids_fine, aes(x = UMAP_1, y = UMAP_2, label = cluster), inherit.aes = FALSE,
-                   color = "black", size = 3, fontface = "bold", max.overlaps = 100,
-                   bg.color = "white", bg.r = 0.15, seed = 1) +
-  scale_color_manual(values = lineage_colors, name = "Broad Lineage") +
+  geom_text_repel(data = centroids_l1, aes(x = UMAP_1, y = UMAP_2, label = l1_lineage),
+                   inherit.aes = FALSE, color = "black", size = 5, fontface = "bold",
+                   max.overlaps = 100, bg.color = "white", bg.r = 0.15, seed = 1) +
+  scale_color_manual(values = l1_colors, name = "Broad Lineage") +
   guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) +
-  labs(title = "WNN: Detailed Level Cell Annotation", x = "UMAP 1", y = "UMAP 2") +
-  theme_minimal(base_size = 12) +
-  theme(panel.border = element_rect(color = "grey40", fill = NA), panel.grid = element_blank(),
-        plot.title = element_text(size = 20),
-        legend.title = element_text(size = 16))
+  labs(title = "WNN: Broad Level Cell Annotation", x = "UMAP 1", y = "UMAP 2") +
+  theme_minimal(base_size = 13) +
+  theme(panel.border = element_rect(color = "grey40", fill = NA),
+        panel.grid = element_blank())
 
-legend_df <- fine_table %>%
-  mutate(cluster = as.character(cluster)) %>%
-  mutate(entry = sprintf("%s: %s", cluster, fine_label)) %>%
-  arrange(broad_lineage, as.integer(cluster))
-
-legend_panel <- function(group_name) {
-  d <- legend_df %>% filter(broad_lineage == group_name)
-  d$y <- rev(seq_len(nrow(d)))
-  ggplot(d, aes(x = 0, y = y)) +
-    geom_text(aes(label = entry), hjust = 0, size = 3) +
-    scale_x_continuous(limits = c(-0.1, 6)) +
-    scale_y_continuous(limits = c(0.3, nrow(d) + 0.7)) +
-    labs(title = group_name) +
-    theme_void(base_size = 11) +
-    theme(plot.title = element_text(face = "bold", size = 12, hjust = 0, margin = margin(b = 4)))
-}
-
-group_order <- c("CD4 T", "CD8 T", "NK", "Monocyte", "B cell", "DC",
-                 "gdT", "MAIT", "dnT", "HSPC", "Platelet", "Erythrocyte",
-                 "Proliferating", "ILC")
-group_order <- group_order[group_order %in% unique(legend_df$broad_lineage)]
-legend_panels <- lapply(group_order, legend_panel)
-legend_grid <- wrap_plots(legend_panels, ncol = 4)
-
-p_combined <- p_main / legend_grid + plot_layout(heights = c(2, 1.6))
-
-ggsave(file.path(figures_dir, "05_wnn_umap_detailed_labels.png"), p_combined, width = 17, height = 16, dpi = 150)
-log_msg("Saved results/05_wnn_umap_detailed_labels.png")
+ggsave(file.path(figures_dir, "05_wnn_umap_l1_labels.png"), p_l1, width = 11, height = 8.5, dpi = 150)
+log_msg("Saved results/05_wnn_umap_l1_labels.png")
 
 ## =============================================================================
 ## Final checkpoint -- replaces what was previously 05_wnn_seurat_object_detailed.rds
+##
+## No separate detailed-level (celltype.l3) annotation step: l3 has 58
+## possible categories but only ~23 actually appear as a majority in our
+## 49 clusters, and its granularity is uneven relative to our own
+## clustering (e.g. only 2 monocyte categories total, so 10 of our 49
+## clusters all collapse to the same "CD14 Mono" label) -- broad
+## (celltype.l2) is the level that actually suits this clustering.
 ## =============================================================================
 
 saveRDS(obj, file.path(results_dir, "05_wnn_seurat_object_detailed.rds"))
 log_msg("Saved results/05_wnn_seurat_object_detailed.rds")
-log_msg("Done: %d cells, %d WNN clusters, %d broad lineage categories.",
-        ncol(obj), n_clusters, length(unique(obj$wnn_broad_lineage)))
+log_msg("Done: %d cells, %d WNN clusters, %d detailed (l2) categories, %d broad (l1) categories.",
+        ncol(obj), n_clusters, length(unique(obj$wnn_broad_lineage)), length(unique(obj$wnn_l1_lineage)))

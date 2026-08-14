@@ -98,16 +98,21 @@ DoubletFinder per-lane breakdown:
 
 ### RNA UMAP
 
+RNA counts are normalized with `LogNormalize`, restricted to the top
+2000 variable genes via `FindVariableFeatures`, then reduced to 30 PCs
+with `RunPCA` and embedded with `RunUMAP` (both seed=42). `FindNeighbors`
++ `FindClusters` (algorithm=3, resolution=0.5) group cells into clusters,
+and `FindAllMarkers`, restricted to the same 2000 HVGs, identifies the
+marker genes used for manual annotation.
+
 | Parameter | Notes |
 |---|---|
-| `LogNormalize` | scale.factor=10000 — applied to the 141,852-cell, 17,808-gene population |
-| `FindVariableFeatures` | method=vst, top 2000 HVGs (top by variance: HBB, HBA2, HBA1, CCL4L2, CCL20) |
-| `RunPCA` | 30 PCs, seed=42 — PC1 explains 52.4% of variance |
-| `RunUMAP` | reduction=`pca`, dims=1:30, seed=42 — produces `umap.rna` embedding |
-| `FindNeighbors` + `FindClusters` | algorithm=3 (SLM), resolution=0.5, seed=42 — 24 clusters |
-| `FindAllMarkers` | restricted to 2000 HVGs — 7,446 marker rows |
-| Manual annotation | marker-based — 12 broad lineage categories |
-| Output | `results/03_rna_umap_broad_labels.png` |
+| `LogNormalize` | scale.factor=10000 |
+| `FindVariableFeatures` | method=vst, top 2000 HVGs |
+| `RunPCA` | 30 PCs, seed=42 |
+| `RunUMAP` | reduction=`pca`, dims=1:30, seed=42 |
+| `FindNeighbors` + `FindClusters` | algorithm=3 (SLM), resolution=0.5, seed=42 |
+| `FindAllMarkers` | restricted to 2000 HVGs |
 
 ### ADT UMAP
 
@@ -129,13 +134,130 @@ DoubletFinder per-lane breakdown:
 | 26 | `RunUMAP` on the WNN graph, seed=42 | `wnn.umap` embedding (no plot) |
 | 27 | `FindClusters` on `wsnn`, algorithm=3, resolution=1.2, seed=42 | 49 clusters (`wnn_clusters`, kept separate from RNA's `seurat_clusters`) |
 | 28 | `FindAllMarkers`, both RNA (2000 HVGs) and ADT (228 antibodies) | 13,194 RNA + 2,320 ADT marker rows |
-| 29 | Manual annotation using RNA+ADT markers together | 13 broad categories |
-| 30 | Labeled WNN UMAP plot (broad) | `results/05_wnn_umap_broad_labels.png` |
-| 31 | Per-cluster detailed annotation, all 49 clusters | `results/05_wnn_detailed_annotation.csv` |
-| 32 | Labeled WNN UMAP plot (detailed, numbered + grouped legend) | `results/05_wnn_umap_detailed_labels.png` |
+| 29 | Detailed-lineage annotation: majority vote per cluster against Hao et al. 2021's `celltype.l2` (real reference, not manual) | 18 detailed categories |
+| 30 | Labeled WNN UMAP plot (detailed) | `results/05_wnn_umap_broad_labels.png` |
+| 31 | Broad-lineage annotation: majority vote per cluster against `celltype.l1`, same reference and method as step 29 — shown alongside detailed, not instead of it | 8 broad categories |
+| 32 | Labeled WNN UMAP plot (broad) | `results/05_wnn_umap_l1_labels.png` |
+
+No separate finer-grained annotation step — `celltype.l3`
+(58 possible categories) was tried and dropped; its granularity doesn't
+match this clustering well (e.g. only 2 monocyte categories total, so
+10 of the 49 clusters all collapse to the same "CD14 Mono" label). See
+"Methodology notes" below.
 
 ### Methodology notes
 
+- **RNA and ADT single-modality annotation (RNA broad, ADT broad) are
+  hardcoded in the scripts as static cluster-number → label lookup
+  tables** (e.g. `broad_lineage_map <- c("0"="CD4 T", "1"="Monocyte",
+  ...)` in `03_rna_umap.R`), not computed dynamically — deliberately
+  manual, so single-modality analysis stays independent of the other
+  modality and of the paper's own (WNN-derived) ground truth; see "WNN
+  detailed annotation" below for why. **This means these two
+  labels only remain correct for an exact reproduction of this run**
+  (same data, same `renv.lock` package versions, same seed=42) —
+  Seurat's clustering is deterministic given identical inputs, so a
+  faithful reproduction gets the same cluster numbers back. **They will
+  not automatically transfer to a different dataset or a run that
+  clusters differently** — cluster "4" in someone else's data could be
+  entirely different cells, and the script's
+  `stopifnot(all(clusters_present %in% names(broad_lineage_map)))`
+  check only verifies every cluster number has *some* entry, not that
+  the label is biologically correct for whatever landed in it. Anyone
+  wanting to annotate different data with this codebase would need to
+  redo the same manual marker-lookup process themselves for these two
+  steps — there's no automated fallback. The method:
+  1. `FindAllMarkers` produces only a statistical table of
+     differentially expressed genes per numbered cluster — it does not
+     output cell-type names.
+  2. For every cluster, its top marker genes were matched by hand
+     against established canonical immune-cell markers (e.g.
+     `CD8A`/`CD8B` → CD8 T, `NCR1`/`KLRF1` → NK, `LYZ`/`CD14` →
+     Monocyte) to assign a label. RNA annotation (03) uses RNA markers
+     only; ADT annotation (04) uses ADT surface-protein markers only.
+  3. This draws on general immunology knowledge of the kind documented
+     in marker databases (CellMarker, PanglaoDB) and standard
+     single-cell tutorials, but no such database or automated
+     reference-mapping tool (e.g. Azimuth, SingleR) was actually
+     queried or run — the labels are not independently verified
+     against a formal reference or the paper's own annotations.
+  4. Each cluster gets an `annotation_confidence` (high/medium/low)
+     reflecting how clear-cut its marker signal was. Where markers
+     alone were ambiguous (2 of 24 RNA clusters), the call was instead
+     cross-checked against the UMAP embedding's spatial position (see
+     "RNA UMAP" above).
+
+  Cell types were manually labeled using canonical immune-cell marker
+  genes/proteins, consistent with markers documented in CellMarker 2.0,
+  PanglaoDB, and the antibody panel from Hao et al. (2021).
+
+  **Citable sources for the canonical markers referenced above** (not
+  actually queried against — see point 3 — but the kind of source this
+  general knowledge draws on):
+  - RNA markers: Hu, C. et al. (2023). CellMarker 2.0: an updated
+    database of manually curated cell markers in human/mouse. *Nucleic
+    Acids Research*, 51(D1), D870–D876.
+    https://doi.org/10.1093/nar/gkac947
+  - RNA markers: Franzén, O., Gan, L.M., Björkegren, J.L.M. (2019).
+    PanglaoDB: a web server for exploration of mouse and human
+    single-cell RNA sequencing data. *Database*, baz046.
+    https://doi.org/10.1093/database/baz046
+  - ADT/surface-protein markers: Hao et al. 2021 (see "References"
+    below) — same 228-antibody TotalSeq-C panel used in this dataset.
+  - CITE-seq methodology (not a marker source, but the foundational
+    method): Stoeckius, M. et al. (2017). Simultaneous epitope and
+    transcriptome measurement in single cells. *Nature Methods*, 14,
+    865–868. https://doi.org/10.1038/nmeth.4380
+- **WNN detailed annotation (05) is NOT hardcoded/manual — it's computed
+  dynamically from Hao et al. 2021's own real reference labels**,
+  unlike the two steps above. `reference/celltype_annotations.csv`
+  (extracted from the paper's published `pbmc_multimodal.h5seurat`
+  reference, confirmed via exact barcode match across all 161,764 raw
+  cells — see "Data" above) is joined to this pipeline's own cells by
+  barcode, then each WNN cluster is assigned the **majority-vote** real
+  `celltype.l2` label among its own cells — replacing what was
+  previously a hand-typed `broad_lineage_map` guess with genuine,
+  citable, published ground truth. Each cluster's `pct_agreement`
+  column (in `results/05_wnn_broad_annotation.csv`) reports what
+  fraction of that cluster's cells actually agree with the majority
+  label — an objective, computed purity measure, replacing the old
+  subjective high/medium/low `annotation_confidence` guess. Because
+  this is computed from the data every run rather than hand-typed per
+  cluster number, it (unlike RNA/ADT single-modality annotation above)
+  would remain correct even if clustering assigned different cluster
+  numbers — it doesn't depend on cluster "4" always meaning the same
+  thing. Comparing this reference-based method against the old manual
+  WNN labels surfaced a real mistake: cluster 38 was manually labeled
+  "Platelet," but the paper's real label for 85.1% of that cluster's
+  cells is `CD14 Mono` — not platelet at all.
+- **An even finer-grained annotation (`celltype.l3`, 58 possible
+  categories) was tried and deliberately dropped, not just left out.**
+  Unlike `celltype.l2`, the paper's `celltype.l3` granularity is uneven
+  relative to this dataset's own 49-cluster WNN structure — it has only
+  2 monocyte categories total (`CD14 Mono`, `CD16 Mono`, no numbered
+  subtypes), while T/NK cells get split much finer (`CD8 TEM_1`
+  through `_6`, `NK_1` through `_4`, etc.). Since 10 of the 49 clusters
+  here are monocyte-related, they all collapsed onto the same 2 labels
+  regardless of real differences between them — only 23 of the 58
+  possible `celltype.l3` categories ever appeared as a cluster majority,
+  with heavy duplication. `celltype.l2` (18 of 31 possible categories
+  actually used here) doesn't have this problem and was kept as the
+  sole annotation level instead.
+- **A coarser `celltype.l1` (8-category) annotation is also computed
+  and plotted (`results/05_wnn_umap_l1_labels.png`, labeled "broad" in
+  the plot since it has the fewest, broadest categories), but
+  deliberately kept alongside `celltype.l2`, not as a replacement for
+  it.** `celltype.l1` was already tested and rejected as the *primary*
+  annotation for the same reason `celltype.l3` was rejected as too
+  fine-grained — mismatched granularity, just in the opposite direction:
+  it merges MAIT and gdT into one "other T" category (3,971 cells) and
+  HSPC/ILC/Eryth into "other" (224 cells). Plotting it makes that loss
+  directly visible: on the UMAP, "other T" isn't one coherent
+  population — it appears as several spatially-separate islands (the
+  real MAIT and gdT clusters, distinct in `celltype.l2`) that only
+  share a label because `celltype.l1` doesn't distinguish them. Kept as
+  a second, explicitly coarser view for direct comparison, not because
+  it's a viable substitute for the detailed-level annotation above.
 - **RNA and ADT are normalized independently** (`LogNormalize` vs. `CLR`)
   since they have fundamentally different statistical properties, then
   combined via WNN integration (script 25) — not at normalization.
@@ -336,8 +458,8 @@ multiomics/
 │   ├── 05_wnn_cluster_markers_ADT.csv
 │   ├── 05_wnn_broad_annotation.csv
 │   ├── 05_wnn_umap_broad_labels.png
-│   ├── 05_wnn_detailed_annotation.csv      
-│   └── 05_wnn_umap_detailed_labels.png
+│   ├── 05_wnn_l1_annotation.csv
+│   └── 05_wnn_umap_l1_labels.png
 └── scripts/
     ├── run_pipeline.sh            (master script)
     ├── 01_rna_qc_filter.R      
@@ -356,15 +478,36 @@ multiomics/
 - **`02_adt_*`** — ADT cell/antibody filter (`.csv`) and ADT QC figure (`.png`)
 - **`03_rna_*`** — RNA cluster markers (`.csv`), broad cluster annotation (`.csv`), and RNA UMAP figure (`.png`)
 - **`04_adt_*`** — ADT cluster markers (`.csv`), broad cluster annotation (`.csv`), and ADT UMAP figure (`.png`)
-- **`05_wnn_*`** — RNA and ADT cluster markers (`.csv`), broad and detailed cluster annotation (`.csv`), and WNN UMAP figures (`.png`)
+- **`05_wnn_*`** — RNA and ADT cluster markers (`.csv`), detailed (`celltype.l2`) and broad (`celltype.l1`) cluster annotation (`.csv`), and their WNN UMAP figures (`.png`)
 
 
 ## 8. Notes
 
-Code was developed with assistance from Claude, an AI coding assistant, 
-based on author-defined step-by-step specifications, analytical objectives, and methodological 
-decisions. The generated code was iteratively refined, reviewed by the author, and 
-validated by reproducing and comparing with major results reported in the original publication.
+Code was developed with assistance from Claude, an AI coding assistant,
+based on author-defined step-by-step specifications, analytical
+objectives, and methodological decisions. The generated code was
+iteratively refined, reviewed by the author, and validated by
+re-running the pipeline end-to-end and cross-checking outputs (e.g.
+final cell/gene counts) against `citeseq_learn_v2`'s independently-
+established results.
+
+**The RNA-only (03) and ADT-only (04) cell-type annotation labels
+specifically were assigned by Claude, not a trained human immunologist
+or an automated reference-mapping tool, and were not cross-checked
+against the paper's own `celltype.l1/l2` ground truth** (see
+"Methodology notes" above for exactly how). This is a materially
+different, weaker form of validation than the code-correctness checks
+above — these two steps' labels reflect an AI's pattern-matching of
+marker genes against general immunology knowledge, not expert clinical
+judgment or a peer-reviewed reference. Treat them as a plausible
+first-pass interpretation, not a verified result — they should be
+reviewed by a qualified immunologist, or replaced with an actual
+reference-mapping method (Azimuth against this same paper's published
+PBMC reference would be the natural choice), before being relied on
+for any real scientific or clinical conclusion. **The WNN (05) detailed
+and broad annotations are different: they're computed directly from
+the paper's own `celltype.l1`/`celltype.l2` reference labels** (majority
+vote per cluster, see "Methodology notes" above), not AI-assigned.
 
 
 ## 9. References

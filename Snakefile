@@ -73,7 +73,7 @@ rule all:
         "results/03_rna_umap_broad_labels.png",
         "results/04_adt_umap_broad_labels.png",
         "results/05_wnn_umap_broad_labels.png",
-        "results/05_wnn_umap_detailed_labels.png"
+        "results/05_wnn_umap_l1_labels.png"
 
 rule rna_qc_filter:
     input:
@@ -141,8 +141,8 @@ rule wnn_integration:
         rna_markers = "results/05_wnn_cluster_markers_RNA.csv",
         adt_markers = "results/05_wnn_cluster_markers_ADT.csv",
         broad_annotation = "results/05_wnn_broad_annotation.csv",
-        detailed_annotation = "results/05_wnn_detailed_annotation.csv",
         broad_fig = "results/05_wnn_umap_broad_labels.png",
-        detailed_fig = "results/05_wnn_umap_detailed_labels.png"
+        l1_annotation = "results/05_wnn_l1_annotation.csv",
+        l1_fig = "results/05_wnn_umap_l1_labels.png"
     shell:
         RUN_PREFIX + RSCRIPT + " " + SCRIPT_DIR + "05_wnn_integration.R"
