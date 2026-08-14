@@ -229,10 +229,6 @@ Read RNA raw matrix              Read ADT raw matrix
         └────────────────┬────────────────┘
                           │
                           ▼
-           Barcode alignment check
-      (stopifnot: identical cell order)
-                          │
-                          ▼
          Build combined Seurat object
           (RNA + ADT assays, shared cells
            -- same droplet, same barcode)
