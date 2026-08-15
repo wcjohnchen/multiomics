@@ -134,16 +134,6 @@ ADT counts were normalized using the centered log-ratio (CLR) normalization meth
 | 26 | `RunUMAP` on the WNN graph, seed=42 | `wnn.umap` embedding (no plot) |
 | 27 | `FindClusters` on `wsnn`, algorithm=3, resolution=1.2, seed=42 | 49 clusters (`wnn_clusters`, kept separate from RNA's `seurat_clusters`) |
 | 28 | `FindAllMarkers`, both RNA (2000 HVGs) and ADT (228 antibodies) | 13,194 RNA + 2,320 ADT marker rows |
-| 29 | Detailed-lineage annotation: majority vote per cluster against Hao et al. 2021's `celltype.l2` (real reference, not manual) | 18 detailed categories |
-| 30 | Labeled WNN UMAP plot (detailed) | `results/05_wnn_umap_broad_labels.png` |
-| 31 | Broad-lineage annotation: majority vote per cluster against `celltype.l1`, same reference and method as step 29 — shown alongside detailed, not instead of it | 8 broad categories |
-| 32 | Labeled WNN UMAP plot (broad) | `results/05_wnn_umap_l1_labels.png` |
-
-No separate finer-grained annotation step — `celltype.l3`
-(58 possible categories) was tried and dropped; its granularity doesn't
-match this clustering well (e.g. only 2 monocyte categories total, so
-10 of the 49 clusters all collapse to the same "CD14 Mono" label). See
-"Methodology notes" below.
 
 ### Methodology notes
 
