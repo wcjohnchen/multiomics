@@ -208,7 +208,7 @@ ADT counts were normalized using the centered log-ratio (CLR) normalization meth
   `celltype.l2` label among its own cells — replacing what was
   previously a hand-typed `broad_lineage_map` guess with genuine,
   citable, published ground truth. Each cluster's `pct_agreement`
-  column (in `results/05_wnn_broad_annotation.csv`) reports what
+  column (in `results/05_wnn_detailed_annotation.csv`) reports what
   fraction of that cluster's cells actually agree with the majority
   label — an objective, computed purity measure, replacing the old
   subjective high/medium/low `annotation_confidence` guess. Because
@@ -234,7 +234,7 @@ ADT counts were normalized using the centered log-ratio (CLR) normalization meth
   actually used here) doesn't have this problem and was kept as the
   sole annotation level instead.
 - **A coarser `celltype.l1` (8-category) annotation is also computed
-  and plotted (`results/05_wnn_umap_l1_labels.png`, labeled "broad" in
+  and plotted (`results/05_wnn_umap_broad_labels.png`, labeled "broad" in
   the plot since it has the fewest, broadest categories), but
   deliberately kept alongside `celltype.l2`, not as a replacement for
   it.** `celltype.l1` was already tested and rejected as the *primary*
@@ -446,10 +446,10 @@ multiomics/
 │   ├── 04_adt_umap_broad_labels.png
 │   ├── 05_wnn_cluster_markers_RNA.csv
 │   ├── 05_wnn_cluster_markers_ADT.csv
+│   ├── 05_wnn_detailed_annotation.csv
+│   ├── 05_wnn_umap_detailed_labels.png
 │   ├── 05_wnn_broad_annotation.csv
-│   ├── 05_wnn_umap_broad_labels.png
-│   ├── 05_wnn_l1_annotation.csv
-│   └── 05_wnn_umap_l1_labels.png
+│   └── 05_wnn_umap_broad_labels.png
 └── scripts/
     ├── run_pipeline.sh            (master script)
     ├── 01_rna_qc_filter.R      
@@ -468,7 +468,7 @@ multiomics/
 - **`02_adt_*`** — ADT cell/antibody filter (`.csv`) and ADT QC figure (`.png`)
 - **`03_rna_*`** — RNA cluster markers (`.csv`), broad cluster annotation (`.csv`), and RNA UMAP figure (`.png`)
 - **`04_adt_*`** — ADT cluster markers (`.csv`), broad cluster annotation (`.csv`), and ADT UMAP figure (`.png`)
-- **`05_wnn_*`** — RNA and ADT cluster markers (`.csv`), broad and detailed cluster annotation (`.csv`), and their WNN UMAP figures (`.png`)
+- **`05_wnn_*`** — RNA and ADT cluster markers (`.csv`), broad and detailed cluster annotation (`.csv`), and WNN UMAP figures (`.png`)
 
 
 ## 8. Notes
