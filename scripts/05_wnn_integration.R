@@ -26,7 +26,7 @@
 #
 # Only the FINAL object is saved as a checkpoint here (see README's
 # GitHub section on results/*.rds size). Each step's own CSV/figure
-# output is still written individually.
+# output is still written individually...
 #
 # Usage:
 #   conda activate citeseq-pipeline
