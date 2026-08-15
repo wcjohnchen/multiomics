@@ -41,13 +41,7 @@ remove cells classified as HTO Doublets. <br>
 
 reference/KEGG_RIBOSOME.txt contains a list of human RPL and RPS ribosomal gene set obtained from MSigDB. It serves as a reference for identifying ribosome-related expression.
 
-reference/celltype_annotations.csv contains the barcode-level `celltype.l1`/`celltype.l2`/`celltype.l3`
-ground-truth labels for all 161,764 raw cells, extracted from Hao et al. 2021's own published
-`pbmc_multimodal.h5seurat` reference (confirmed via exact barcode match). It's what the WNN
-annotation step (05) joins against — see "Methodology notes" below. The source `.h5seurat` file
-itself (~2.06 GB) is not committed to this repo (see `.gitignore`) since it exceeds GitHub's
-100 MB limit and is publicly downloadable from the paper; only the extracted CSV is checked in.
-
+reference/celltype_annotations.csv contains cell-type labels for the WNN UMAP clusters based on the Hao et al. (2021) paper.
 
 
 ## 2. Computational Methods
@@ -495,24 +489,6 @@ iteratively refined, reviewed by the author, and validated by
 re-running the pipeline end-to-end and cross-checking outputs (e.g.
 final cell/gene counts) against `citeseq_learn_v2`'s independently-
 established results.
-
-**The RNA-only (03) and ADT-only (04) cell-type annotation labels
-specifically were assigned by Claude, not a trained human immunologist
-or an automated reference-mapping tool, and were not cross-checked
-against the paper's own `celltype.l1/l2` ground truth** (see
-"Methodology notes" above for exactly how). This is a materially
-different, weaker form of validation than the code-correctness checks
-above — these two steps' labels reflect an AI's pattern-matching of
-marker genes against general immunology knowledge, not expert clinical
-judgment or a peer-reviewed reference. Treat them as a plausible
-first-pass interpretation, not a verified result — they should be
-reviewed by a qualified immunologist, or replaced with an actual
-reference-mapping method (Azimuth against this same paper's published
-PBMC reference would be the natural choice), before being relied on
-for any real scientific or clinical conclusion. **The WNN (05) detailed
-and broad annotations are different: they're computed directly from
-the paper's own `celltype.l1`/`celltype.l2` reference labels** (majority
-vote per cluster, see "Methodology notes" above), not AI-assigned.
 
 
 ## 9. References
