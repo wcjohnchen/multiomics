@@ -100,7 +100,7 @@ ADT (antibody-derived tag) data measure cell-surface protein abundance and were 
 
 ### RNA UMAP
 
-RNA counts were normalized, and the top 2,000 highly variable genes (HVGs) were selected. PCA was performed for dimensionality reduction, 
+RNA counts were normalized using the log-normalization method (Seurat), and the top 2,000 highly variable genes (HVGs) were selected. PCA was performed for dimensionality reduction, 
 and the resulting principal components used for clustering and UMAP visualization.  Cell clusters were annotated based on canonical gene markers.
 
 | Parameter | Notes |
@@ -114,17 +114,20 @@ and the resulting principal components used for clustering and UMAP visualizatio
 
 ### ADT UMAP
 
+ADT counts are normalized with `NormalizeData` (CLR method, margin=2), scaled
+and reduced with `RunPCA` over all 228 antibodies (no HVG-selection-equivalent
+step here, unlike RNA), then embedded with `RunUMAP`. `FindNeighbors` +
+`FindClusters` (algorithm=3, resolution=0.5) group cells into 29 clusters,
+and `FindAllMarkers`, run over all 228 antibodies, identifies the marker
+proteins used for manual annotation.
 
-
-| # | Step | Result |
-|---|---|---|
-| 18 | `CLR`, margin=2 | 141,852 cells × 228 antibodies |
-| 19 | `ScaleData` + `RunPCA`, all 228 antibodies, 30 PCs, seed=42 | PC1 explains 30.5% of variance (flatter than RNA's 52.4%) |
-| 20 | `RunUMAP` on `apca`, dims 1:30, seed=42 | `umap.adt` embedding (no plot) |
-| 21 | `FindNeighbors`+`FindClusters`, algorithm=3, resolution=0.5, seed=42 | 29 clusters |
-| 22 | `FindAllMarkers`, all 228 antibodies | 1,290 marker rows |
-| 23 | Manual marker-based annotation | 9 broad categories |
-| 24 | Labeled ADT UMAP plot | `results/04_adt_umap_broad_labels.png` |
+| Parameter | Notes |
+|---|---|
+| `NormalizeData` | method=CLR, margin=2 |
+| `ScaleData` + `RunPCA` | all 228 antibodies, 30 PCs, seed=42 (PC1 explains 30.5% of variance, flatter than RNA's 52.4%) |
+| `RunUMAP` | reduction=`apca`, dims=1:30, seed=42 |
+| `FindNeighbors` + `FindClusters` | algorithm=3 (SLM), resolution=0.5, seed=42 |
+| `FindAllMarkers` | all 228 antibodies (no HVG-style restriction) |
 
 ### WNN-based multimodal integration
 
@@ -339,7 +342,6 @@ Key package versions:
 
 
 ## 4. Analysis Workflow
-
 
 ```
        RNA Matrix                      ADT Matrix
