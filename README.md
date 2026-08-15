@@ -101,7 +101,7 @@ ADT (antibody-derived tag) data measure cell-surface protein abundance and were 
 ### RNA UMAP
 
 RNA counts were normalized, and the top 2,000 highly variable genes (HVGs) were selected. PCA was performed for dimensionality reduction, 
-and the resulting principal components used for clustering and UMAP visualization.  Cell clusters were annotated based on the expression of canonical gene markers.
+and the resulting principal components used for clustering and UMAP visualization.  Cell clusters were annotated based on canonical gene markers.
 
 | Parameter | Notes |
 |---|---|
