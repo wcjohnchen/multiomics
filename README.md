@@ -101,7 +101,7 @@ ADT (antibody-derived tag) data measure cell-surface protein abundance and were 
 ### RNA UMAP
 
 RNA counts were normalized using the log-normalization method (Seurat), and the top 2,000 highly variable genes (HVGs) were selected. PCA was performed for dimensionality reduction, 
-and the resulting principal components used for clustering and UMAP visualization.  Cell clusters were annotated based on canonical gene markers.
+and the resulting principal components used for clustering and UMAP visualization.  Cell clusters were annotated based on canonical gene markers.  The same random seed was used across analysis to ensure reproducibility.
 
 | Parameter | Notes |
 |---|---|
@@ -130,10 +130,10 @@ RNA (`pca`) and ADT (`apca`) reductions were integrated into a joint weighted-ne
 
 | Parameter | Notes |
 |---|---|
-| `FindMultiModalNeighbors` | `pca`+`apca`, dims 1:30 each, seed=42 (joint `wknn`/`wsnn` graphs; RNA weight: median 0.55, ranges near-0 to 1.0 per cell) |
-| `RunUMAP` | reduction=weighted.nn, seed=42 (`wnn.umap` embedding, no plot) |
-| `FindClusters` | graph=`wsnn`, algorithm=3 (SLM), resolution=1.2, seed=42 (49 clusters, `wnn_clusters`, kept separate from RNA's `seurat_clusters`) |
-| `FindAllMarkers` | both RNA (2000 HVGs) and ADT (228 antibodies) (13,194 RNA + 2,320 ADT marker rows) |
+| `FindMultiModalNeighbors` | `pca`+`apca`, dims 1:30 each, seed=42 |
+| `RunUMAP` | reduction=weighted.nn, seed=42 |
+| `FindClusters` | graph=`wsnn`, algorithm=3 (SLM), resolution=1.2, seed=42 |
+| `FindAllMarkers` | RNA (2000 HVGs) and ADT (228 antibodies) |
 
 ### Methodology notes
 
