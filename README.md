@@ -428,7 +428,7 @@ multiomics/
 ├── reference/
 │   ├── KEGG_RIBOSOME.txt              # ribosomal gene reference list
 │   ├── hto_doublet_calls.csv          # HTO-based doublet/singlet calls
-│   └── celltype_annotations.csv       # Hao et al. 2021 celltype.l1/l2/l3, extracted from pbmc_multimodal.h5seurat (not committed, see "Data")
+│   └── celltype_annotations.csv       # Cell type annotation from Hao et al. 2021 paper
 ├── results/                       
 │   ├── 01_rna_qc_report_summary.png
 │   ├── 01_rna_qc_filter_cell.csv
@@ -468,7 +468,7 @@ multiomics/
 - **`02_adt_*`** — ADT cell/antibody filter (`.csv`) and ADT QC figure (`.png`)
 - **`03_rna_*`** — RNA cluster markers (`.csv`), broad cluster annotation (`.csv`), and RNA UMAP figure (`.png`)
 - **`04_adt_*`** — ADT cluster markers (`.csv`), broad cluster annotation (`.csv`), and ADT UMAP figure (`.png`)
-- **`05_wnn_*`** — RNA and ADT cluster markers (`.csv`), detailed (`celltype.l2`) and broad (`celltype.l1`) cluster annotation (`.csv`), and their WNN UMAP figures (`.png`)
+- **`05_wnn_*`** — RNA and ADT cluster markers (`.csv`), broad and detailed cluster annotation (`.csv`), and their WNN UMAP figures (`.png`)
 
 
 ## 8. Notes
@@ -477,9 +477,7 @@ Code was developed with assistance from Claude, an AI coding assistant,
 based on author-defined step-by-step specifications, analytical
 objectives, and methodological decisions. The generated code was
 iteratively refined, reviewed by the author, and validated by
-re-running the pipeline end-to-end and cross-checking outputs (e.g.
-final cell/gene counts) against `citeseq_learn_v2`'s independently-
-established results.
+comparing major results reported in the original publication.
 
 
 ## 9. References
