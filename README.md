@@ -126,14 +126,14 @@ ADT counts were normalized using the centered log-ratio (CLR) normalization meth
 
 ### WNN-based multimodal integration
 
+RNA (`pca`) and ADT (`apca`) reductions were integrated into a joint weighted-nearest-neighbor graph (Seurat), then embedded with UMAP and clustered directly on the combined graph. Cluster markers were identified separately for each modality.
 
-
-| # | Step | Result |
-|---|---|---|
-| 25 | `FindMultiModalNeighbors`, `pca`+`apca`, dims 1:30 each, seed=42 | Joint `wknn`/`wsnn` graphs. RNA weight: median 0.55, ranges near-0 to 1.0 per cell |
-| 26 | `RunUMAP` on the WNN graph, seed=42 | `wnn.umap` embedding (no plot) |
-| 27 | `FindClusters` on `wsnn`, algorithm=3, resolution=1.2, seed=42 | 49 clusters (`wnn_clusters`, kept separate from RNA's `seurat_clusters`) |
-| 28 | `FindAllMarkers`, both RNA (2000 HVGs) and ADT (228 antibodies) | 13,194 RNA + 2,320 ADT marker rows |
+| Parameter | Notes |
+|---|---|
+| `FindMultiModalNeighbors` | `pca`+`apca`, dims 1:30 each, seed=42 (joint `wknn`/`wsnn` graphs; RNA weight: median 0.55, ranges near-0 to 1.0 per cell) |
+| `RunUMAP` | reduction=weighted.nn, seed=42 (`wnn.umap` embedding, no plot) |
+| `FindClusters` | graph=`wsnn`, algorithm=3 (SLM), resolution=1.2, seed=42 (49 clusters, `wnn_clusters`, kept separate from RNA's `seurat_clusters`) |
+| `FindAllMarkers` | both RNA (2000 HVGs) and ADT (228 antibodies) (13,194 RNA + 2,320 ADT marker rows) |
 
 ### Methodology notes
 
@@ -208,7 +208,7 @@ ADT counts were normalized using the centered log-ratio (CLR) normalization meth
   `celltype.l2` label among its own cells — replacing what was
   previously a hand-typed `broad_lineage_map` guess with genuine,
   citable, published ground truth. Each cluster's `pct_agreement`
-  column (in `results/05_wnn_detailed_annotation.csv`) reports what
+  column (in `results/05_wnn_broad_annotation.csv`) reports what
   fraction of that cluster's cells actually agree with the majority
   label — an objective, computed purity measure, replacing the old
   subjective high/medium/low `annotation_confidence` guess. Because
@@ -234,7 +234,7 @@ ADT counts were normalized using the centered log-ratio (CLR) normalization meth
   actually used here) doesn't have this problem and was kept as the
   sole annotation level instead.
 - **A coarser `celltype.l1` (8-category) annotation is also computed
-  and plotted (`results/05_wnn_umap_broad_labels.png`, labeled "broad" in
+  and plotted (`results/05_wnn_umap_l1_labels.png`, labeled "broad" in
   the plot since it has the fewest, broadest categories), but
   deliberately kept alongside `celltype.l2`, not as a replacement for
   it.** `celltype.l1` was already tested and rejected as the *primary*
@@ -428,7 +428,7 @@ multiomics/
 ├── reference/
 │   ├── KEGG_RIBOSOME.txt              # ribosomal gene reference list
 │   ├── hto_doublet_calls.csv          # HTO-based doublet/singlet calls
-│   └── celltype_annotations.csv       # Cell type annotation from Hao et al. 2021 paper
+│   └── celltype_annotations.csv       # cell type annotation from Hao et al. 2021 paper
 ├── results/                       
 │   ├── 01_rna_qc_report_summary.png
 │   ├── 01_rna_qc_filter_cell.csv
@@ -446,10 +446,10 @@ multiomics/
 │   ├── 04_adt_umap_broad_labels.png
 │   ├── 05_wnn_cluster_markers_RNA.csv
 │   ├── 05_wnn_cluster_markers_ADT.csv
-│   ├── 05_wnn_detailed_annotation.csv
-│   ├── 05_wnn_umap_detailed_labels.png
 │   ├── 05_wnn_broad_annotation.csv
-│   └── 05_wnn_umap_broad_labels.png
+│   ├── 05_wnn_umap_broad_labels.png
+│   ├── 05_wnn_l1_annotation.csv
+│   └── 05_wnn_umap_l1_labels.png
 └── scripts/
     ├── run_pipeline.sh            (master script)
     ├── 01_rna_qc_filter.R      
