@@ -41,8 +41,12 @@ remove cells classified as HTO Doublets. <br>
 
 reference/KEGG_RIBOSOME.txt contains a list of human RPL and RPS ribosomal gene set obtained from MSigDB. It serves as a reference for identifying ribosome-related expression.
 
-Barcodes carry a lane prefix identifying the 13 sequencing lanes across
-the two donor pools (`L_pool`: lanes `L1`–`L5` (67,090 cells); `E2_pool`: lanes `E2L1`–`E2L8` (94,674 cells))
+reference/celltype_annotations.csv contains the barcode-level `celltype.l1`/`celltype.l2`/`celltype.l3`
+ground-truth labels for all 161,764 raw cells, extracted from Hao et al. 2021's own published
+`pbmc_multimodal.h5seurat` reference (confirmed via exact barcode match). It's what the WNN
+annotation step (05) joins against — see "Methodology notes" below. The source `.h5seurat` file
+itself (~2.06 GB) is not committed to this repo (see `.gitignore`) since it exceeds GitHub's
+100 MB limit and is publicly downloadable from the paper; only the extracted CSV is checked in.
 
 
 
@@ -437,8 +441,9 @@ multiomics/
 │   ├── GSM5008737 RNA_3P {barcodes,features,matrix}^  # manually download
 │   └── GSM5008738 ADT_3P {barcodes,features,matrix}^  # manually download
 ├── reference/
-│   ├── KEGG_RIBOSOME.txt          # ribosomal gene reference list
-│   └── hto_doublet_calls.csv      # HTO-based doublet/singlet calls
+│   ├── KEGG_RIBOSOME.txt              # ribosomal gene reference list
+│   ├── hto_doublet_calls.csv          # HTO-based doublet/singlet calls
+│   └── celltype_annotations.csv       # Hao et al. 2021 celltype.l1/l2/l3, extracted from pbmc_multimodal.h5seurat (not committed, see "Data")
 ├── results/                       
 │   ├── 01_rna_qc_report_summary.png
 │   ├── 01_rna_qc_filter_cell.csv
