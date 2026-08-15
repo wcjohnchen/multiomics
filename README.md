@@ -59,6 +59,8 @@ reference/celltype_annotations.csv contains cell-type labels for the WNN UMAP cl
 
 ### RNA QC
 
+RNA data were filtered based on cell-level, gene-level, mitochondrial-content, and outlier criteria, followed by doublet detection and removal.
+
 | Step | Before | After | Removed | Notes |
 |---|---|---|---|---|
 | Build Seurat object (RNA+ADT) | 161,764 cells | 161,764 cells | — | 33,538 genes, 228 antibodies |
@@ -68,7 +70,7 @@ reference/celltype_annotations.csv contains cell-type labels for the WNN UMAP cl
 | Quantile trim (2–98%, per pool) | 161,764 cells | 153,822 cells | 7,942 cells | — |
 | Doublet removal (DoubletFinder + HTO, union) | 153,822 cells | **141,852 cells** | 11,970 cells | Doublets were identified and removed independently within each sequencing lane: 11,537; HTO-based detection: 508; overlap: 75 |
 
-DoubletFinder per-lane breakdown:
+Doublet detection is a method for identifying and removing droplets containing two or more cells, which can introduce artifacts into downstream analysis.  DoubletFinder per-lane breakdown:
 
 | Lane | Cells | Doublets | Singlets |
 |---|---|---|---|
@@ -89,6 +91,8 @@ DoubletFinder per-lane breakdown:
 
 ### ADT QC
 
+ADT (antibody-derived tag) data measure cell-surface protein abundance and were filtered based on antibody-level and cell-level criteria.
+
 | Step | Before | After | Removed | Notes |
 |---|---|---|---|---|
 | Cell filter (≥20 Ab counts/cell) | 141,852 cells | **141,852 cells** | 0 | All cells retained |
@@ -96,12 +100,8 @@ DoubletFinder per-lane breakdown:
 
 ### RNA UMAP
 
-RNA counts are normalized with `LogNormalize`, restricted to the top
-2000 variable genes via `FindVariableFeatures`, then reduced to 30 PCs
-with `RunPCA` and embedded with `RunUMAP` (both seed=42). `FindNeighbors`
-+ `FindClusters` (algorithm=3, resolution=0.5) group cells into clusters,
-and `FindAllMarkers`, restricted to the same 2000 HVGs, identifies the
-marker genes used for manual annotation.
+RNA counts were normalized, and the top 2,000 highly variable genes (HVGs) were selected. PCA was performed for dimensionality reduction, 
+and the resulting principal components used for clustering and UMAP visualization.
 
 | Parameter | Notes |
 |---|---|
@@ -113,6 +113,8 @@ marker genes used for manual annotation.
 | `FindAllMarkers` | restricted to 2000 HVGs |
 
 ### ADT UMAP
+
+
 
 | # | Step | Result |
 |---|---|---|
@@ -355,7 +357,7 @@ Key package versions:
            │                               │
            ▼                               ▼
      RNA Processing                     ADT QC
- (Log Normalization, HVG,       (Cell/antibody filter)
+ (Log normalization, HVG,       (Cell/antibody filter)
      scale, PCA, UMAP)                     │
            │                               │
            │                               ▼
