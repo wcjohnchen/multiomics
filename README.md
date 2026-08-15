@@ -114,22 +114,19 @@ and the resulting principal components used for clustering and UMAP visualizatio
 
 ### ADT UMAP
 
-ADT counts are normalized with `NormalizeData` (CLR method, margin=2), scaled
-and reduced with `RunPCA` over all 228 antibodies (no HVG-selection-equivalent
-step here, unlike RNA), then embedded with `RunUMAP`. `FindNeighbors` +
-`FindClusters` (algorithm=3, resolution=0.5) group cells into 29 clusters,
-and `FindAllMarkers`, run over all 228 antibodies, identifies the marker
-proteins used for manual annotation.
+ADT counts were normalized using the centered log-ratio (CLR) normalization method (Seurat), followed by PCA, clustering, UMAP, and annotation based on canonical protein markers.
 
 | Parameter | Notes |
 |---|---|
 | `NormalizeData` | method=CLR, margin=2 |
-| `ScaleData` + `RunPCA` | all 228 antibodies, 30 PCs, seed=42 (PC1 explains 30.5% of variance, flatter than RNA's 52.4%) |
+| `ScaleData` + `RunPCA` | 30 PCs, seed=42 |
 | `RunUMAP` | reduction=`apca`, dims=1:30, seed=42 |
 | `FindNeighbors` + `FindClusters` | algorithm=3 (SLM), resolution=0.5, seed=42 |
-| `FindAllMarkers` | all 228 antibodies (no HVG-style restriction) |
+| `FindAllMarkers` | 228 antibodies |
 
 ### WNN-based multimodal integration
+
+
 
 | # | Step | Result |
 |---|---|---|
