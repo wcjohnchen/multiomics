@@ -1,14 +1,5 @@
 #!/usr/bin/env Rscript
 #
-# Regenerates report.html from report_template.html, using this run's
-# actual results/ files -- the template keeps the exact page formatting
-# fixed (same design, layout, prose, methodology explanations); only the
-# 6 figures and 15 numeric/statistical values are pulled fresh each run.
-#
-# Every value is read from a results/ CSV or a results/ PNG -- none of it
-# re-derives anything by loading the large .rds checkpoints, so this runs
-# in seconds, not minutes.
-#
 # Usage:
 #   conda activate citeseq-pipeline
 #   Rscript 06_generate_report.R
