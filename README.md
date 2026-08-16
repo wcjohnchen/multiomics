@@ -89,7 +89,7 @@ ADT data measure cell-surface protein abundance and were filtered based on antib
 
 | Step | Before | After | Removed | Notes |
 |---|---|---|---|---|
-| Cell filter (≥20 Ab counts/cell) | 141,852 cells | **141,852 cells** | 0 | All cells retained |
+| Cell filter (≥20 antibodies detected/cell) | 141,852 cells | **141,852 cells** | 0 | All cells retained |
 | Antibody filter (≥100 cells/Ab) | 228 Ab | **228 Ab** | 0 | All antibodies retained |
 
 ### RNA UMAP
