@@ -102,7 +102,8 @@ rule all:
         "results/03_rna_umap_broad_labels.png",
         "results/04_adt_umap_broad_labels.png",
         "results/05_wnn_umap_detailed_labels.png",
-        "results/05_wnn_umap_broad_labels.png"
+        "results/05_wnn_umap_broad_labels.png",
+        "report.html"
 
 rule rna_qc_filter:
     input:
@@ -120,7 +121,8 @@ rule rna_qc_filter:
         gene_filter = "results/01_rna_qc_filter_gene.csv",
         mito_filter = "results/01_rna_qc_filter_mito.csv",
         quantile_filter = "results/01_rna_qc_filter_quantile.csv",
-        doublet_summary = "results/01_rna_doublet_summary.csv"
+        doublet_summary = "results/01_rna_doublet_summary.csv",
+        qc_stats = "results/01_rna_qc_stats.csv"
     shell:
         RUN_PREFIX + RSCRIPT + " " + SCRIPT_DIR + "01_rna_qc_filter.R"
 
@@ -132,7 +134,8 @@ rule adt_qc_filter:
     output:
         adt_obj = "results/02_adt_seurat_object_filtered.rds",
         qc_fig = "results/02_adt_qc_report_summary.png",
-        qc_filter = "results/02_adt_qc_filter.csv"
+        qc_filter = "results/02_adt_qc_filter.csv",
+        qc_stats = "results/02_adt_qc_stats.csv"
     shell:
         RUN_PREFIX + RSCRIPT + " " + SCRIPT_DIR + "02_adt_qc_filter.R"
 
@@ -175,3 +178,28 @@ rule wnn_integration:
         broad_fig = "results/05_wnn_umap_broad_labels.png"
     shell:
         RUN_PREFIX + RSCRIPT + " " + SCRIPT_DIR + "05_wnn_integration.R"
+
+rule generate_report:
+    input:
+        template = "scripts/report_template.html",
+        script = "scripts/06_generate_report.R",
+        rna_cell_filter = "results/01_rna_qc_filter_cell.csv",
+        rna_gene_filter = "results/01_rna_qc_filter_gene.csv",
+        rna_doublets = "results/01_rna_doublet_summary.csv",
+        rna_qc_stats = "results/01_rna_qc_stats.csv",
+        adt_qc_filter = "results/02_adt_qc_filter.csv",
+        adt_qc_stats = "results/02_adt_qc_stats.csv",
+        rna_broad = "results/03_rna_broad_annotation.csv",
+        rna_fig = "results/03_rna_umap_broad_labels.png",
+        adt_broad = "results/04_adt_broad_annotation.csv",
+        adt_fig = "results/04_adt_umap_broad_labels.png",
+        wnn_detailed = "results/05_wnn_detailed_annotation.csv",
+        wnn_detailed_fig = "results/05_wnn_umap_detailed_labels.png",
+        wnn_broad = "results/05_wnn_broad_annotation.csv",
+        wnn_broad_fig = "results/05_wnn_umap_broad_labels.png",
+        rna_qc_fig = "results/01_rna_qc_report_summary.png",
+        adt_qc_fig = "results/02_adt_qc_report_summary.png"
+    output:
+        report = "report.html"
+    shell:
+        RUN_PREFIX + RSCRIPT + " " + SCRIPT_DIR + "06_generate_report.R"
