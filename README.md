@@ -126,8 +126,7 @@ ADT counts were normalized using the centered log-ratio (CLR) normalization meth
 
 ### WNN-based multimodal integration
 
-RNA and ADT principal components were used to construct a WNN-based graph for multimodal integration, followed by UMAP visualization.  
-Cell clusters were annotated based on the referenece provided by Hao et al. (2021).
+RNA and ADT principal components were used to construct a WNN-based graph for multimodal integration, followed by UMAP visualization.  Cell clusters were annotated based on the referenece provided by Hao et al. (2021).
 
 | Parameter | Notes |
 |---|---|
