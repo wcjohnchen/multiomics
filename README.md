@@ -141,7 +141,7 @@ RNA and ADT principal components were used to construct a WNN-based graph for mu
 Dependencies are pinned in `renv.lock` (147 packages, R version: 4.5.3).  From the project root, open R:
 
 ```
-install.package("renv")  # if not already installed
+install.packages("renv")  # if not already installed
 renv::restore()
 ```
 
