@@ -62,7 +62,7 @@ RNA data were filtered based on cell-level, gene-level, mitochondrial-content, a
 | Gene filter (≥100 cells/gene) | 33,538 genes | 17,808 genes | 15,730 genes | — |
 | Mitochondria filter (<20% `percent.mt`) | 161,764 cells | 161,764 cells | 0 | All cells retained |
 | Quantile trim (2–98%, per pool) | 161,764 cells | 153,822 cells | 7,942 cells | — |
-| Doublet removal (DoubletFinder + HTO, union) | 153,822 cells | **141,852 cells** | 11,970 cells | Doublets were identified and removed independently within each sequencing lane (seed=42 per lane): 11,537; HTO-based detection: 508; overlap: 75 |
+| Doublet removal (DoubletFinder + HTO, union) | 153,822 cells | **141,852 cells** | 11,970 cells | Doublets were identified and removed independently within each sequencing lane: 11,537; HTO-based detection: 508; overlap: 75; seed=42 |
 
 Doublet detection is a method for identifying and removing droplets containing two or more cells, which can introduce artifacts into downstream analysis. DoubletFinder per-lane breakdown:
 
