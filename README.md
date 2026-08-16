@@ -1,12 +1,6 @@
 # Integrated Analysis of Single-Cell Multiomics Data Using CITE-seq
 
-A from-scratch, step-by-step rebuild of the CITE-seq analysis pipeline
-already validated in `citeseq_learn_v2`, built incrementally in a fresh
-conda environment (`citeseq-pipeline`) rather than cloning the working
-environment wholesale. Each step is run and checked individually before
-moving to the next. The pipeline is now complete end-to-end: raw data →
-QC/filtering → independent RNA and ADT processing → WNN integration →
-final combined annotation...
+This project performs multimodal single-cell analysis by integrating RNA expression and antibody-derived tag (ADT) measurements from a publicly available CITE-seq dataset.
 
 📊 **[CITE-seq Analysis Report](https://claude.ai/code/artifact/7966cdf7-365d-4a2b-8d4f-81e619d4259e)**
 
@@ -91,7 +85,7 @@ Doublet detection is a method for identifying and removing droplets containing t
 
 ### ADT QC
 
-ADT (antibody-derived tag) data measure cell-surface protein abundance and were filtered based on antibody-level and cell-level criteria.
+ADT data measure cell-surface protein abundance and were filtered based on antibody-level and cell-level criteria.
 
 | Step | Before | After | Removed | Notes |
 |---|---|---|---|---|
@@ -126,7 +120,7 @@ ADT counts were normalized using the centered log-ratio (CLR) normalization meth
 
 ### WNN-based multimodal integration
 
-RNA and ADT principal components were used to construct a WNN-based graph for multimodal integration, followed by UMAP visualization.  Cell clusters were annotated based on the referenece provided by Hao et al. (2021).
+RNA and ADT principal components were used to construct a weighted nearest neighbors (WNN)-based graph for multimodal integration, followed by UMAP visualization.  Cell clusters were annotated based on the referenece provided by Hao et al. (2021).
 
 | Parameter | Notes |
 |---|---|
