@@ -9,8 +9,7 @@
 #
 # Usage:
 #   ./run_pipeline.sh
-#   CITESEQ_CONDA_ENV=my_env_name ./run_pipeline.sh   # if your conda env
-#                                                      # isn't named 'citeseq-pipeline'
+#   CITESEQ_CONDA_ENV=my_env_name ./run_pipeline.sh   # option: use a different conda env name (default: 'citeseq-pipeline')
 
 set -uo pipefail
 
@@ -59,9 +58,9 @@ fi
 
 # --- pick a package-source mode ---------------------------------------------
 
-# Conda env name defaults to 'citeseq-pipeline' but is overridable, since a
-# given user's env doesn't have to be named that:
+# Conda env name defaults to 'citeseq-pipeline' but is overridable
 #   CITESEQ_CONDA_ENV=my_env_name ./scripts/run_pipeline.sh
+
 CONDA_ENV_NAME="${CITESEQ_CONDA_ENV:-citeseq-pipeline}"
 
 if command -v conda >/dev/null 2>&1; then

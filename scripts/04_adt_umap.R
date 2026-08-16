@@ -1,32 +1,14 @@
 #!/usr/bin/env Rscript
 #
-# Combined ADT normalization -> UMAP -> clustering -> annotation pipeline
-# -- consolidates scripts 18, 19, 20, 21, 22, 23, 24. Covers everything
-# from 02_adt_qc_filter.R's own ADT-filtered checkpoint to the final
-# labeled ADT-only UMAP plot. Runs as its own branch, independent of and
-# parallel to 03_rna_umap.R -- the two are only combined at WNN
-# integration (05_wnn_integration.R), not before.
+# ADT normalization -> UMAP -> clustering -> annotation pipeline
 #
-#   1. CLR normalization, margin=2 (script 18)
-#   2. Scale + PCA, all 228 antibodies, 30 PCs (script 19) -- no HVG-style
-#      subselection; unlike RNA's 17,808 genes, all 228 antibodies were
-#      deliberately curated to be informative, so all are used directly.
-#   3. UMAP on apca (script 20)
-#   4. FindNeighbors + FindClusters, 29 clusters, using distinct
-#      `adt_clusters`/`adt_snn` names -- this object has no RNA clustering
-#      on it (this branch never touches 03_rna_umap.R's output), but
-#      distinct names avoid a future collision once 05_wnn_integration.R
-#      merges this branch with the RNA one, which does carry
-#      `seurat_clusters` (script 21)
-#   5. FindAllMarkers, all 228 antibodies (script 22)
-#   6. Manual broad-lineage annotation, using ADT surface-protein markers
-#      -- several near-definitive single-protein calls (TCR-Va7.2 for
-#      MAIT, TCR-Vg9/Vd2 for gdT, CD34/CD117/CD133 for HSPC) (script 23)
-#   7. Labeled ADT UMAP plot (script 24)
-#
-# Only the FINAL object is saved as a checkpoint here (see README's
-# GitHub section on results/*.rds size). Each step's own CSV/figure
-# output is still written individually.
+#   1. CLR normalization, margin=2.
+#   2. Scale + PCA.
+#   3. UMAP on apca.
+#   4. FindNeighbors + FindClusters.
+#   5. FindAllMarkers.
+#   6. Broad-lineage annotation.
+#   7. Labeled ADT UMAP plot.
 #
 # Usage:
 #   conda activate citeseq-pipeline
@@ -41,9 +23,6 @@ suppressMessages({
 
 set.seed(42)
 
-# Auto-detect the project root from this script's own location (scripts/
-# is always one level below it), so paths work regardless of where the
-# repo is cloned.
 script_args <- commandArgs(trailingOnly = FALSE)
 script_path <- sub("^--file=", "", script_args[grep("^--file=", script_args)])
 project_dir <- dirname(dirname(normalizePath(script_path)))
@@ -63,7 +42,7 @@ obj <- readRDS(file.path(results_dir, "02_adt_seurat_object_filtered.rds"))
 log_msg("%d cells, %d antibodies (ADT)", ncol(obj), nrow(obj[["ADT"]]))
 
 ## =============================================================================
-## Step 1/7 (script 18): CLR normalization
+## Step 1/7: CLR normalization
 ## =============================================================================
 
 log_msg("Step 1/7: Normalizing ADT (CLR, margin=2)...")
@@ -78,7 +57,7 @@ log_msg("Sanity check (cell 1, antibody %s): raw count=%d, CLR value=%.4f",
 rm(raw_adt, norm_adt); gc()
 
 ## =============================================================================
-## Step 2/7 (script 19): Scale + PCA, all 228 antibodies
+## Step 2/7: Scale + PCA, all 228 antibodies
 ## =============================================================================
 
 log_msg("Step 2/7: Scaling data (ADT, all 228 antibodies) + PCA (seed=42)...")
@@ -96,7 +75,7 @@ pct_var <- round(100 * pca_var / sum(pca_var), 2)
 log_msg("PC1-5 %% variance explained: %s", paste(pct_var[1:5], collapse = ", "))
 
 ## =============================================================================
-## Step 3/7 (script 20): UMAP on apca
+## Step 3/7: UMAP on apca
 ## =============================================================================
 
 log_msg("Step 3/7: Running UMAP (ADT apca, dims 1:30, seed=42)...")
@@ -104,7 +83,7 @@ obj <- RunUMAP(obj, reduction = "apca", dims = 1:30, reduction.name = "umap.adt"
                reduction.key = "adtUMAP_", seed.use = 42, verbose = FALSE)
 
 ## =============================================================================
-## Step 4/7 (script 21): FindNeighbors + FindClusters
+## Step 4/7: FindNeighbors + FindClusters
 ## =============================================================================
 
 log_msg("Step 4/7: FindNeighbors + FindClusters (algorithm=3/SLM, resolution=%.2f, seed=42)...",
@@ -119,7 +98,7 @@ log_msg("Found %d clusters", n_clusters)
 print(table(obj$adt_clusters))
 
 ## =============================================================================
-## Step 5/7 (script 22): FindAllMarkers, all 228 antibodies
+## Step 5/7: FindAllMarkers, all 228 antibodies
 ## =============================================================================
 
 log_msg("Step 5/7: Running FindAllMarkers (ADT, all 228 antibodies)...")
@@ -132,10 +111,10 @@ write.csv(markers, file.path(results_dir, "04_adt_cluster_markers.csv"), row.nam
 log_msg("Saved results/04_adt_cluster_markers.csv")
 
 ## =============================================================================
-## Step 6/7 (script 23): manual broad-lineage annotation
+## Step 6/7: canonical marker-based broad-lineage annotation
 ## =============================================================================
 
-log_msg("Step 6/7: Manual broad-lineage annotation...")
+log_msg("Step 6/7: canonical marker-based broad-lineage annotation...")
 
 broad_lineage_map <- c(
   "0"="Monocyte","1"="CD4 T","2"="NK","3"="Monocyte","4"="CD4 T",
@@ -188,10 +167,7 @@ key_markers_map <- c(
 
 clusters_present <- as.character(sort(unique(as.integer(as.character(obj$adt_clusters)))))
 
-# Same reasoning as 03_rna_umap.R: this hand-typed map is keyed by cluster
-# *number* from one specific reference run and isn't guaranteed to cover
-# every cluster number a differently-clustered run produces. Label any
-# unmapped cluster "Unidentified" and continue, rather than halting.
+
 unmapped_clusters <- setdiff(clusters_present, names(broad_lineage_map))
 if (length(unmapped_clusters) > 0) {
   log_msg("WARNING: cluster(s) %s not in the hand-typed broad_lineage_map (likely",
@@ -205,9 +181,7 @@ if (length(unmapped_clusters) > 0) {
   }
 }
 
-# Opposite direction: a cluster number the map has an entry for might not
-# exist in this run's clustering at all. Drop those stale entries rather
-# than leaving an NA n_cells row in the output.
+
 stale_clusters <- setdiff(names(broad_lineage_map), clusters_present)
 if (length(stale_clusters) > 0) {
   log_msg("NOTE: cluster(s) %s from broad_lineage_map don't exist in this run's",
@@ -237,7 +211,7 @@ write.csv(annotation_table, file.path(results_dir, "04_adt_broad_annotation.csv"
 log_msg("Saved results/04_adt_broad_annotation.csv")
 
 ## =============================================================================
-## Step 7/7 (script 24): labeled ADT UMAP plot
+## Step 7/7: labeled ADT UMAP plot
 ## =============================================================================
 
 log_msg("Step 7/7: Building labeled ADT UMAP plot...")
@@ -276,9 +250,6 @@ p <- ggplot(df, aes(UMAP_1, UMAP_2, color = broad_lineage)) +
 ggsave(file.path(figures_dir, "04_adt_umap_broad_labels.png"), p, width = 11, height = 8.5, dpi = 150)
 log_msg("Saved results/04_adt_umap_broad_labels.png")
 
-## =============================================================================
-## Final checkpoint -- replaces what was previously 04_adt_seurat_object_annotated.rds
-## =============================================================================
 
 saveRDS(obj, file.path(results_dir, "04_adt_seurat_object_annotated.rds"))
 log_msg("Saved results/04_adt_seurat_object_annotated.rds")

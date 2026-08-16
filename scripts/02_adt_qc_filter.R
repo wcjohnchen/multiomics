@@ -1,21 +1,10 @@
 #!/usr/bin/env Rscript
 #
-# Combined ADT QC + filtering pipeline -- consolidates scripts 07 and 08.
+# ADT QC + filtering
 #
-#   1. QC report figure (script 08) -- computed FIRST, on the raw
-#      (pre-filter) object, since it documents the threshold-justification
-#      lines for the filters about to be applied below. Doesn't chain
-#      sequentially with the filter step -- it's a diagnostic on raw data.
-#   2. Antibody filter + cell filter (script 07): antibody detected in
-#      >=100 cells; cell has nCount_ADT>=20 AND nFeature_ADT>=20.
-#
-# Runs on top of RNA's FINAL doublet-filtered checkpoint (09), not the
-# earlier pre-doublet quantile-trim one -- a doublet is a property of the
-# physical droplet, not one modality, so it should be removed before any
-# modality-specific filter (RNA's or ADT's) is computed, not interleaved
-# with them. 04_adt_umap.R reads this step's output directly, as the start
-# of its own independent branch (parallel to 03_rna_umap.R), merging with
-# the RNA branch only at WNN integration (05).
+#   1. QC report figure -- computed on the raw object for documentation.
+#   2. Antibody filter + cell filter: antibody detected in
+#      >=100 cells; cell has nFeature_ADT>=20.
 #
 # Usage:
 #   conda activate citeseq-pipeline
@@ -39,7 +28,6 @@ figures_dir <- results_dir
 dir.create(results_dir, showWarnings = FALSE, recursive = TRUE)
 
 min_adt_feature        <- 20
-min_adt_count          <- 20
 min_cells_per_antibody <- 100
 
 log_msg <- function(...) {
@@ -47,7 +35,7 @@ log_msg <- function(...) {
 }
 
 ## =============================================================================
-## Step 1 (script 08): ADT QC report figure, on the RAW object
+## Step 1: ADT QC report figure, on the RAW object
 ## =============================================================================
 
 log_msg("Step 1/2: ADT QC report figure (raw, pre-filter)...")
@@ -134,7 +122,7 @@ log_msg("Wilcoxon test nCount_ADT ~ pool: p = %.4g", wt$p.value)
 rm(qc_df, cells_per_antibody_raw, antibody_df, p_a, p_b, p_c, p_d, p_e, p_f, p_combined); gc()
 
 ## =============================================================================
-## Step 2 (script 07): ADT antibody filter + cell filter
+## Step 2: ADT antibody filter + cell filter
 ## =============================================================================
 
 log_msg("Step 2/2: ADT filtering (antibody + cell)...")
@@ -159,15 +147,15 @@ rm(adt_counts, cells_per_antibody); gc()
 
 log_msg("Recomputed nCount_ADT min=%d, nFeature_ADT min=%d",
         min(obj$nCount_ADT), min(obj$nFeature_ADT))
-n_fail <- sum(obj$nCount_ADT < min_adt_count | obj$nFeature_ADT < min_adt_feature)
-log_msg("Cells failing nCount_ADT>=%d or nFeature_ADT>=%d: %d", min_adt_count, min_adt_feature, n_fail)
+n_fail <- sum(obj$nFeature_ADT < min_adt_feature)
+log_msg("Cells failing nFeature_ADT>=%d: %d", min_adt_feature, n_fail)
 
-obj <- subset(obj, subset = nCount_ADT >= min_adt_count & nFeature_ADT >= min_adt_feature)
+obj <- subset(obj, subset = nFeature_ADT >= min_adt_feature)
 n_cells_after <- ncol(obj)
 log_msg("Cells after ADT cell filter: %d (removed %d)", n_cells_after, n_cells_before - n_cells_after)
 
 qc_filter <- data.frame(
-  step = c("antibody_filter_min_cells_100", "cell_filter_nCount_nFeature_ge_20"),
+  step = c("antibody_filter_min_cells_100", "cell_filter_nFeature_ge_20"),
   cells_before = c(n_cells_before, n_cells_before),
   cells_after  = c(n_cells_before, n_cells_after),
   antibodies_before = c(n_ab_before, length(antibodies_keep)),
@@ -175,6 +163,7 @@ qc_filter <- data.frame(
 )
 write.csv(qc_filter, file.path(results_dir, "02_adt_qc_filter.csv"), row.names = FALSE)
 log_msg("Saved results/02_adt_qc_filter.csv")
+
 
 saveRDS(obj, file.path(results_dir, "02_adt_seurat_object_filtered.rds"))
 log_msg("Saved results/02_adt_seurat_object_filtered.rds")

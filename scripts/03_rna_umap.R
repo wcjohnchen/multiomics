@@ -1,25 +1,15 @@
 #!/usr/bin/env Rscript
 #
 # Combined RNA normalization -> UMAP -> clustering -> annotation pipeline
-# -- consolidates scripts 10, 11, 12, 13, 14, 15, 16, 17. Covers
-# everything from the doublet-filtered RNA population to the final
-# labeled RNA-only UMAP plot.
 #
-#   1. LogNormalize (script 10)
-#   2. HVG selection, top 2000 (script 11)
-#   3. Scale + PCA, 30 PCs (script 12)
-#   4. UMAP on pca (script 13)
-#   5. FindNeighbors + FindClusters, 24 clusters (script 14)
-#   6. FindAllMarkers, RNA restricted to HVGs (script 15)
-#   7. Manual broad-lineage annotation (script 16), including the two
-#      corrections made after visually cross-checking against the UMAP
-#      embedding (cluster 15 -> Monocyte, cluster 22 -> ILC -- see README)
-#   8. Labeled RNA UMAP plot (script 17)
-#
-# Only the FINAL object is saved as a checkpoint here (the old per-step
-# checkpoints from 10-16 only existed for resuming between separate
-# script invocations -- see README's GitHub section on results/*.rds
-# size). Each step's own CSV/figure output is still written individually.
+#   1. LogNormalize.
+#   2. HVG selection, top 2000.
+#   3. Scale + PCA, 30 PCs.
+#   4. UMAP on pca.
+#   5. FindNeighbors + FindClusters, 24 clusters .
+#   6. FindAllMarkers, RNA restricted to HVGs.
+#   7. Broad-lineage annotation.
+#   8. Labeled RNA UMAP plot.
 #
 # Usage:
 #   conda activate citeseq-pipeline
@@ -34,9 +24,6 @@ suppressMessages({
 
 set.seed(42)
 
-# Auto-detect the project root from this script's own location (scripts/
-# is always one level below it), so paths work regardless of where the
-# repo is cloned.
 script_args <- commandArgs(trailingOnly = FALSE)
 script_path <- sub("^--file=", "", script_args[grep("^--file=", script_args)])
 project_dir <- dirname(dirname(normalizePath(script_path)))
@@ -56,7 +43,7 @@ obj <- readRDS(file.path(results_dir, "01_rna_seurat_object_doublet_filtered.rds
 log_msg("%d cells, %d genes (RNA)", ncol(obj), nrow(obj[["RNA"]]))
 
 ## =============================================================================
-## Step 1/8 (script 10): LogNormalize
+## Step 1/8: LogNormalize
 ## =============================================================================
 
 log_msg("Step 1/8: Normalizing RNA (LogNormalize, scale.factor=10000)...")
@@ -72,7 +59,7 @@ log_msg("Sanity check (cell 1, gene %s): raw count=%d, LogNormalize value=%.4f",
 rm(raw_rna, norm_rna); gc()
 
 ## =============================================================================
-## Step 2/8 (script 11): HVG selection, top 2000
+## Step 2/8: HVG selection, top 2000
 ## =============================================================================
 
 log_msg("Step 2/8: Finding variable features (RNA, vst, top 2000)...")
@@ -82,7 +69,7 @@ hvgs <- VariableFeatures(obj, assay = "RNA")
 log_msg("Selected %d variable genes. Top 10: %s", length(hvgs), paste(head(hvgs, 10), collapse = ", "))
 
 ## =============================================================================
-## Step 3/8 (script 12): Scale + PCA, 30 PCs
+## Step 3/8: Scale + PCA, 30 PCs
 ## =============================================================================
 
 log_msg("Step 3/8: Scaling data (RNA, HVGs only) + PCA (seed=42)...")
@@ -97,7 +84,7 @@ pct_var <- round(100 * pca_var / sum(pca_var), 2)
 log_msg("PC1-5 %% variance explained: %s", paste(pct_var[1:5], collapse = ", "))
 
 ## =============================================================================
-## Step 4/8 (script 13): UMAP on pca
+## Step 4/8: UMAP on pca
 ## =============================================================================
 
 log_msg("Step 4/8: Running UMAP (RNA pca, dims 1:30, seed=42)...")
@@ -105,7 +92,7 @@ obj <- RunUMAP(obj, reduction = "pca", dims = 1:30, reduction.name = "umap.rna",
                reduction.key = "rnaUMAP_", seed.use = 42, verbose = FALSE)
 
 ## =============================================================================
-## Step 5/8 (script 14): FindNeighbors + FindClusters
+## Step 5/8: FindNeighbors + FindClusters
 ## =============================================================================
 
 log_msg("Step 5/8: FindNeighbors + FindClusters (algorithm=3/SLM, resolution=%.2f, seed=42)...",
@@ -118,7 +105,7 @@ log_msg("Found %d clusters", n_clusters)
 print(table(obj$seurat_clusters))
 
 ## =============================================================================
-## Step 6/8 (script 15): FindAllMarkers, RNA restricted to HVGs
+## Step 6/8: FindAllMarkers, RNA restricted to HVGs
 ## =============================================================================
 
 log_msg("Step 6/8: Running FindAllMarkers (RNA, restricted to 2000 HVGs)...")
@@ -130,20 +117,11 @@ write.csv(markers, file.path(results_dir, "03_rna_cluster_markers.csv"), row.nam
 log_msg("Saved results/03_rna_cluster_markers.csv")
 
 ## =============================================================================
-## Step 7/8 (script 16): manual broad-lineage annotation
+## Step 7/8: broad-lineage annotation
 ## =============================================================================
 
-log_msg("Step 7/8: Manual broad-lineage annotation...")
+log_msg("Step 7/8: broad-lineage annotation...")
 
-# cluster -> broad_lineage, based on top FindAllMarkers hits (step 6 above).
-# Includes the two corrections made after visually cross-checking against
-# the UMAP embedding (see step 8 plot / README): cluster 15's markers
-# (TNF/CCL3/CCL3L1/CCL4L2/NFKBIA) also read as inflammatory monocyte/
-# macrophage, and it embeds inside the Monocyte island, not near any T
-# cell cluster -> Monocyte, not "T cell (activated)". Cluster 22's markers
-# (KIT/GATA3/IL1R1/SPINK2) plus its position within the CD8 T/NK lymphoid
-# branch (far from the true HSPC cluster 21, which sits isolated) fit ILC
-# better -> ILC, not "HSPC/Basophil".
 broad_lineage_map <- c(
   "0"="CD4 T", "1"="Monocyte", "2"="NK", "3"="CD4 T", "4"="CD8 T",
   "5"="CD4 T", "6"="Monocyte", "7"="B cell", "8"="Monocyte", "9"="CD8 T",
@@ -176,14 +154,7 @@ key_markers_map <- c(
 
 clusters_present <- as.character(sort(unique(as.integer(as.character(obj$seurat_clusters)))))
 
-# This hand-typed map is keyed by cluster *number* from one specific
-# reference run (see the big comment above) -- it isn't guaranteed to cover
-# every cluster number a differently-clustered run produces, even with the
-# same seed and renv-pinned package versions (confirmed: a real rerun once
-# produced one extra cluster). Rather than halting the whole pipeline on a
-# mismatch, label any unmapped cluster "Unidentified" and continue -- this
-# extends the map itself so every downstream lookup below just works
-# unchanged.
+
 unmapped_clusters <- setdiff(clusters_present, names(broad_lineage_map))
 if (length(unmapped_clusters) > 0) {
   log_msg("WARNING: cluster(s) %s not in the hand-typed broad_lineage_map (likely",
@@ -197,12 +168,7 @@ if (length(unmapped_clusters) > 0) {
   }
 }
 
-# Opposite direction of the same problem: a cluster *number* the map has an
-# entry for might not exist at all in this run's clustering (e.g. the map
-# covers 0-23 but only 23 clusters formed). Left in, `table(obj$seurat_
-# clusters)[names(broad_lineage_map)]` below would silently produce an NA
-# n_cells row for it. Drop those stale entries so the output only ever
-# reflects clusters that are actually present.
+
 stale_clusters <- setdiff(names(broad_lineage_map), clusters_present)
 if (length(stale_clusters) > 0) {
   log_msg("NOTE: cluster(s) %s from broad_lineage_map don't exist in this run's",
@@ -232,7 +198,7 @@ write.csv(annotation_table, file.path(results_dir, "03_rna_broad_annotation.csv"
 log_msg("Saved results/03_rna_broad_annotation.csv")
 
 ## =============================================================================
-## Step 8/8 (script 17): labeled RNA UMAP plot
+## Step 8/8: labeled RNA UMAP plot
 ## =============================================================================
 
 log_msg("Step 8/8: Building labeled RNA UMAP plot...")
@@ -272,9 +238,6 @@ p <- ggplot(df, aes(UMAP_1, UMAP_2, color = broad_lineage)) +
 ggsave(file.path(figures_dir, "03_rna_umap_broad_labels.png"), p, width = 11, height = 8.5, dpi = 150)
 log_msg("Saved results/03_rna_umap_broad_labels.png")
 
-## =============================================================================
-## Final checkpoint -- replaces what was previously 03_rna_seurat_object_annotated.rds
-## =============================================================================
 
 saveRDS(obj, file.path(results_dir, "03_rna_seurat_object_annotated.rds"))
 log_msg("Saved results/03_rna_seurat_object_annotated.rds")

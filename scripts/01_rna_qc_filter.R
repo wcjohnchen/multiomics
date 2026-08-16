@@ -1,33 +1,14 @@
 #!/usr/bin/env Rscript
 #
-# Combined Seurat object build + RNA QC + filtering + doublet removal
-# pipeline -- consolidates scripts 01, 02, 03, 04, 05, 06, 09 into one
-# script, covering everything from the raw 10x-format source data to a
-# fully filtered, doublet-free RNA population.
-#
-#   1. Build Seurat object, RNA + ADT assays (script 01)
-#   2. QC report figure (script 06) -- computed on the raw (pre-filter)
-#      object, since it documents the threshold-justification lines for
-#      the filters about to be applied below. Doesn't chain sequentially
-#      with the rest -- it's a diagnostic on raw data, not a step that
-#      consumes/produces a filtered checkpoint.
-#   3. Cell filter (script 02): nFeature_RNA >= 200
-#   4. Gene filter (script 03): detected in >= 100 cells
-#   5. Mito filter (script 04): percent.mt < 20%
-#   6. Quantile trim (script 05): 2-98th percentile, per pool
-#   7. Doublet removal (script 09): DoubletFinder + HTO, per-lane, union
-#
-# Two intermediate checkpoints are still saved, not just the final
-# filtered object -- because 02_adt_qc_filter.R reads both of them
-# directly (its own QC-report step reads the raw object; its filtering
-# step reads the quantile-trimmed-but-pre-doublet-removal population):
-#   - 01_rna_seurat_object_raw.rds
-#   - 01_rna_seurat_object_quantile_trim.rds
-# The other old per-step checkpoints (02/03/04) only existed for
-# resuming between separate script invocations, which doesn't apply
-# once combined -- see README's GitHub section on results/*.rds size.
-# Each step's filter CSV is still written individually either way,
-# since those are cheap and valuable on their own.
+# Seurat object build + RNA QC + filtering + doublet removal
+
+#   1. Build Seurat object, RNA + ADT assays.
+#   2. QC report figure -- computed on the raw object for documentation.
+#   3. Cell filter: nFeature_RNA >= 200.
+#   4. Gene filter: detected in >= 100 cells.
+#   5. Mito filter: percent.mt < 20%.
+#   6. Quantile trim: 2-98th percentile, per pool.
+#   7. Doublet removal: DoubletFinder + HTO, per-lane, union.
 #
 # Usage:
 #   conda activate citeseq-pipeline
@@ -43,9 +24,6 @@ suppressMessages({
 
 set.seed(42)
 
-# Auto-detect the project root from this script's own location (scripts/
-# is always one level below it), so paths work regardless of where the
-# repo is cloned.
 script_args <- commandArgs(trailingOnly = FALSE)
 script_path <- sub("^--file=", "", script_args[grep("^--file=", script_args)])
 project_dir <- dirname(dirname(normalizePath(script_path)))
@@ -68,7 +46,7 @@ log_msg <- function(...) {
 }
 
 ## =============================================================================
-## Step 1/7 (script 01): build Seurat object (RNA + ADT) from raw 10x data
+## Step 1/7: build Seurat object (RNA + ADT) from raw 10x data
 ## =============================================================================
 
 log_msg("Step 1/7: Building Seurat object from raw 10x-format data...")
@@ -110,16 +88,11 @@ log_msg("Saved results/01_rna_seurat_object_raw.rds")
 rm(obj); gc()
 
 ## =============================================================================
-## Step 2/7 (script 06): RNA QC report figure, on the RAW object
+## Step 2/7: RNA QC report figure, on the RAW object
 ## =============================================================================
 
 log_msg("Step 2/7: RNA QC report figure (raw, pre-filter)...")
 
-# Re-read from disk rather than reusing the in-memory object from step 1 --
-# R's copy-on-modify semantics would otherwise deep-copy the full RNA+ADT
-# object the moment a slot is touched below, transiently doubling memory
-# and risking an OOM kill on a 161k-cell object (this crashed once before
-# this re-read-from-disk fix was added).
 obj_raw <- readRDS(file.path(results_dir, "01_rna_seurat_object_raw.rds"))
 obj_raw[["percent.mt"]] <- PercentageFeatureSet(obj_raw, assay = "RNA", pattern = "^MT-")
 ribo_lines <- readLines(file.path(project_dir, "reference", "KEGG_RIBOSOME.txt"))
@@ -211,7 +184,7 @@ log_msg("Saved results/01_rna_qc_report_summary.png")
 rm(qc_df, cells_per_gene, gene_df, p_total, p_a, p_b, p_c, p_d, p_e, p_f, p_combined); gc()
 
 ## =============================================================================
-## Step 3/7 (script 02): cell filter, nFeature_RNA >= 200
+## Step 3/7: cell filter, nFeature_RNA >= 200
 ## =============================================================================
 
 log_msg("Step 3/7: Cell filter (nFeature_RNA >= %d)...", min_genes)
@@ -230,7 +203,7 @@ write.csv(data.frame(step = "cell_filter_min_genes_200", cells_before = n_before
 log_msg("Saved results/01_rna_qc_filter_cell.csv")
 
 ## =============================================================================
-## Step 4/7 (script 03): gene filter, detected in >= 100 cells
+## Step 4/7: gene filter, detected in >= 100 cells
 ## =============================================================================
 
 log_msg("Step 4/7: Gene filter (>= %d cells/gene)...", min_cells_gene)
@@ -254,7 +227,7 @@ write.csv(data.frame(step = "gene_filter_min_cells_100", genes_before = n_genes_
 log_msg("Saved results/01_rna_qc_filter_gene.csv")
 
 ## =============================================================================
-## Step 5/7 (script 04): mito filter, percent.mt < 20%
+## Step 5/7: mito filter, percent.mt < 20%
 ## =============================================================================
 
 log_msg("Step 5/7: Mito filter (percent.mt < %d%%)...", mito_max)
@@ -273,7 +246,7 @@ write.csv(data.frame(step = "mito_filter_lt_20pct", cells_before = n_before,
 log_msg("Saved results/01_rna_qc_filter_mito.csv")
 
 ## =============================================================================
-## Step 6/7 (script 05): quantile trim, 2-98th percentile, per pool
+## Step 6/7: quantile trim, 2-98th percentile, per pool
 ## =============================================================================
 
 log_msg("Step 6/7: Quantile trim (%.0f-%.0fth percentile, per pool)...", quantile_lo * 100, quantile_hi * 100)
@@ -308,16 +281,11 @@ write.csv(data.frame(step = "quantile_trim_2_98pct_per_pool", cells_before = n_b
           file.path(results_dir, "01_rna_qc_filter_quantile.csv"), row.names = FALSE)
 log_msg("Saved results/01_rna_qc_filter_quantile.csv")
 
-# Saved here, not just as a final-object-only checkpoint, because
-# 02_adt_qc_filter.R depends on this exact quantile-trimmed-but-
-# pre-doublet-removal population (ADT filtering is deliberately run
-# before RNA-side doublet removal) -- without this file, that script
-# has no valid input.
 saveRDS(obj, file.path(results_dir, "01_rna_seurat_object_quantile_trim.rds"))
 log_msg("Saved results/01_rna_seurat_object_quantile_trim.rds")
 
 ## =============================================================================
-## Step 7/7 (script 09): doublet removal, DoubletFinder + HTO, per-lane, union
+## Step 7/7: doublet removal, DoubletFinder + HTO, per-lane, union
 ## =============================================================================
 
 log_msg("Step 7/7: Doublet removal (DoubletFinder + HTO, per-lane, union)...")
@@ -340,13 +308,7 @@ for (ln in lanes) {
   optimal_pK <- 0.01
   nExp_lane <- round(doublet_rate * ncol(obj_lane))
   log_msg("Lane %s: running doubletFinder (pK=%s, nExp=%d)...", ln, optimal_pK, nExp_lane)
-  # doubletFinder()'s only randomness is two plain sample() calls internally
-  # (confirmed by inspecting its source) -- it takes no seed argument itself
-  # and otherwise just consumes whatever position the single top-of-script
-  # set.seed(42) RNG stream happens to be at by the time this lane's turn
-  # comes up, which depends on exactly how many prior random draws happened
-  # in every earlier lane. Reseed fresh right here so each lane's doublet
-  # calls are reproducible on their own, independent of loop position.
+
   set.seed(42)
   obj_lane <- doubletFinder(obj_lane, PCs = 1:10, pN = 0.25, pK = optimal_pK,
                              nExp = nExp_lane, sct = FALSE)
@@ -394,9 +356,6 @@ write.csv(data.frame(step = c("doubletfinder_only", "hto_only", "both", "union_r
           file.path(results_dir, "01_rna_doublet_summary.csv"), row.names = FALSE)
 log_msg("Saved results/01_rna_doublet_summary.csv")
 
-## =============================================================================
-## Final checkpoint -- replaces what was previously 01_rna_seurat_object_doublet_filtered.rds
-## =============================================================================
 
 saveRDS(obj, file.path(results_dir, "01_rna_seurat_object_doublet_filtered.rds"))
 log_msg("Saved results/01_rna_seurat_object_doublet_filtered.rds")
