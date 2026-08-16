@@ -194,8 +194,8 @@ annotation_table <- data.frame(
   pct_agreement = unname(broad_pct_map[names(broad_lineage_map)]),
   row.names = NULL
 )
-write.csv(annotation_table, file.path(results_dir, "05_wnn_broad_annotation.csv"), row.names = FALSE)
-log_msg("Saved results/05_wnn_broad_annotation.csv")
+write.csv(annotation_table, file.path(results_dir, "05_wnn_detailed_annotation.csv"), row.names = FALSE)
+log_msg("Saved results/05_wnn_detailed_annotation.csv")
 
 ## =============================================================================
 ## Step 6/7 (script 30): detailed-level labeled UMAP plot
@@ -229,8 +229,8 @@ p_broad <- ggplot(df_broad, aes(UMAP_1, UMAP_2, color = broad_lineage)) +
   theme(panel.border = element_rect(color = "grey40", fill = NA),
         panel.grid = element_blank())
 
-ggsave(file.path(figures_dir, "05_wnn_umap_broad_labels.png"), p_broad, width = 11, height = 8.5, dpi = 150)
-log_msg("Saved results/05_wnn_umap_broad_labels.png")
+ggsave(file.path(figures_dir, "05_wnn_umap_detailed_labels.png"), p_broad, width = 11, height = 8.5, dpi = 150)
+log_msg("Saved results/05_wnn_umap_detailed_labels.png")
 
 ## =============================================================================
 ## Step 7/7: broad-lineage annotation from celltype.l1 (8 categories) --
@@ -262,11 +262,11 @@ l1_table <- data.frame(
   pct_agreement = unname(l1_pct_map[names(l1_map)]),
   row.names = NULL
 )
-write.csv(l1_table, file.path(results_dir, "05_wnn_l1_annotation.csv"), row.names = FALSE)
-log_msg("Saved results/05_wnn_l1_annotation.csv")
+write.csv(l1_table, file.path(results_dir, "05_wnn_broad_annotation.csv"), row.names = FALSE)
+log_msg("Saved results/05_wnn_broad_annotation.csv")
 
 # Display-only relabel for the plot -- these are the paper's real
-# celltype.l1 values (kept as-is in results/05_wnn_l1_annotation.csv
+# celltype.l1 values (kept as-is in results/05_wnn_broad_annotation.csv
 # above, unchanged): "other T" is a vague catch-all covering three
 # distinct T-cell subtypes (gdT/MAIT/dnT, confirmed by cross-referencing
 # the reference's own celltype.l2 column); "other" is just capitalized
@@ -298,8 +298,8 @@ p_l1 <- ggplot(df_l1, aes(UMAP_1, UMAP_2, color = l1_lineage)) +
   theme(panel.border = element_rect(color = "grey40", fill = NA),
         panel.grid = element_blank())
 
-ggsave(file.path(figures_dir, "05_wnn_umap_l1_labels.png"), p_l1, width = 11, height = 8.5, dpi = 150)
-log_msg("Saved results/05_wnn_umap_l1_labels.png")
+ggsave(file.path(figures_dir, "05_wnn_umap_broad_labels.png"), p_l1, width = 11, height = 8.5, dpi = 150)
+log_msg("Saved results/05_wnn_umap_broad_labels.png")
 
 ## =============================================================================
 ## Final checkpoint -- replaces what was previously 05_wnn_seurat_object_detailed.rds
