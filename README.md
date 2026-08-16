@@ -241,8 +241,8 @@ A `Snakefile` at the project root automates execution of the pipeline.  Run from
 ```bash
 conda activate snakemake_env
 
-snakemake -n --cores 1     # dry run (-n triggers preview; --cores is required but irrelevant to it here)
-snakemake --cores 2        # real run (auto-detects citeseq-pipeline conda env, falls back to renv otherwise)
+snakemake -n --cores 1     # dry run
+snakemake --cores 2        # real run
 snakemake --cores 2 --config rscript=/full/path/to/Rscript   # optional: override the auto-detected Rscript
 ```
 
