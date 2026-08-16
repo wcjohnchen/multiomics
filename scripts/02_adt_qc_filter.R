@@ -96,6 +96,16 @@ wt <- wilcox.test(nCount_ADT ~ pool, data = qc_df)
 sig_label <- if (wt$p.value < 0.0001) "****" else if (wt$p.value < 0.001) "***" else
              if (wt$p.value < 0.01) "**" else if (wt$p.value < 0.05) "*" else "ns"
 p_label <- if (wt$p.value < 2.2e-16) "p < 2.2e-16" else sprintf("p = %.2g", wt$p.value)
+
+# Same reasoning as 01_rna_qc_filter.R's 01_rna_qc_stats.csv: previously only
+# ever embedded as plot-annotation text, never saved anywhere machine-readable.
+pool_medians <- tapply(qc_df$nCount_ADT, qc_df$pool, median)
+batch_ratio_e2_over_l <- unname(pool_medians["E2_pool"] / pool_medians["L_pool"])
+write.csv(data.frame(metric = c("wilcoxon_p_value", "median_ratio_E2_pool_over_L_pool"),
+                      value = c(wt$p.value, batch_ratio_e2_over_l)),
+          file.path(results_dir, "02_adt_qc_stats.csv"), row.names = FALSE)
+log_msg("Saved results/02_adt_qc_stats.csv")
+
 bracket_y  <- max(qc_df$nCount_ADT) * 1.25
 text_y     <- max(qc_df$nCount_ADT) * 1.32
 

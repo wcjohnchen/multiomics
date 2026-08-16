@@ -159,6 +159,16 @@ wt <- wilcox.test(nCount_RNA ~ pool, data = qc_df)
 sig_label <- if (wt$p.value < 0.0001) "****" else if (wt$p.value < 0.001) "***" else
              if (wt$p.value < 0.01) "**" else if (wt$p.value < 0.05) "*" else "ns"
 p_label <- if (wt$p.value < 2.2e-16) "p < 2.2e-16" else sprintf("p = %.2g", wt$p.value)
+
+# Previously only ever embedded as plot-annotation text (p_label above), never
+# saved anywhere machine-readable -- written here so a report generator can
+# read this run's actual batch-effect numbers instead of the plot image.
+pool_medians <- tapply(qc_df$nCount_RNA, qc_df$pool, median)
+batch_ratio_e2_over_l <- unname(pool_medians["E2_pool"] / pool_medians["L_pool"])
+write.csv(data.frame(metric = c("wilcoxon_p_value", "median_ratio_E2_pool_over_L_pool"),
+                      value = c(wt$p.value, batch_ratio_e2_over_l)),
+          file.path(results_dir, "01_rna_qc_stats.csv"), row.names = FALSE)
+log_msg("Saved results/01_rna_qc_stats.csv")
 bracket_y  <- max(qc_df$nCount_RNA) * 1.25
 text_y     <- max(qc_df$nCount_RNA) * 1.32
 
