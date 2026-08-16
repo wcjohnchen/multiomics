@@ -187,7 +187,36 @@ key_markers_map <- c(
 )
 
 clusters_present <- as.character(sort(unique(as.integer(as.character(obj$adt_clusters)))))
-stopifnot(all(clusters_present %in% names(broad_lineage_map)))
+
+# Same reasoning as 03_rna_umap.R: this hand-typed map is keyed by cluster
+# *number* from one specific reference run and isn't guaranteed to cover
+# every cluster number a differently-clustered run produces. Label any
+# unmapped cluster "Unidentified" and continue, rather than halting.
+unmapped_clusters <- setdiff(clusters_present, names(broad_lineage_map))
+if (length(unmapped_clusters) > 0) {
+  log_msg("WARNING: cluster(s) %s not in the hand-typed broad_lineage_map (likely",
+          paste(unmapped_clusters, collapse = ", "))
+  log_msg("  non-deterministic clustering vs. the reference run this map was built for)")
+  log_msg("  -- labeling as 'Unidentified' rather than halting.")
+  for (cl in unmapped_clusters) {
+    broad_lineage_map[[cl]] <- "Unidentified"
+    confidence_map[[cl]] <- "none"
+    key_markers_map[[cl]] <- NA_character_
+  }
+}
+
+# Opposite direction: a cluster number the map has an entry for might not
+# exist in this run's clustering at all. Drop those stale entries rather
+# than leaving an NA n_cells row in the output.
+stale_clusters <- setdiff(names(broad_lineage_map), clusters_present)
+if (length(stale_clusters) > 0) {
+  log_msg("NOTE: cluster(s) %s from broad_lineage_map don't exist in this run's",
+          paste(stale_clusters, collapse = ", "))
+  log_msg("  clustering -- dropping them from the output rather than leaving stale rows.")
+  broad_lineage_map <- broad_lineage_map[setdiff(names(broad_lineage_map), stale_clusters)]
+  confidence_map <- confidence_map[setdiff(names(confidence_map), stale_clusters)]
+  key_markers_map <- key_markers_map[setdiff(names(key_markers_map), stale_clusters)]
+}
 
 obj$adt_broad_lineage <- unname(broad_lineage_map[as.character(obj$adt_clusters)])
 obj$adt_annotation_confidence <- unname(confidence_map[as.character(obj$adt_clusters)])
@@ -203,6 +232,7 @@ annotation_table <- data.frame(
   key_markers = key_markers_map,
   row.names = NULL
 )
+annotation_table <- annotation_table[order(as.integer(annotation_table$cluster)), ]
 write.csv(annotation_table, file.path(results_dir, "04_adt_broad_annotation.csv"), row.names = FALSE)
 log_msg("Saved results/04_adt_broad_annotation.csv")
 
@@ -222,7 +252,8 @@ centroids <- df %>%
 lineage_colors <- c(
   "CD4 T" = "#4C78A8", "CD8 T" = "#72B7B2", "gdT" = "#54A24B",
   "MAIT" = "#B279A2", "NK" = "#E45756", "B cell" = "#F58518",
-  "Monocyte" = "#EECA3B", "DC" = "#BAB0AC", "HSPC" = "#000000"
+  "Monocyte" = "#EECA3B", "DC" = "#BAB0AC", "HSPC" = "#000000",
+  "Unidentified" = "#7F7F7F"
 )
 
 missing_colors <- setdiff(unique(df$broad_lineage), names(lineage_colors))

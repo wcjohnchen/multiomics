@@ -175,7 +175,43 @@ key_markers_map <- c(
 )
 
 clusters_present <- as.character(sort(unique(as.integer(as.character(obj$seurat_clusters)))))
-stopifnot(all(clusters_present %in% names(broad_lineage_map)))
+
+# This hand-typed map is keyed by cluster *number* from one specific
+# reference run (see the big comment above) -- it isn't guaranteed to cover
+# every cluster number a differently-clustered run produces, even with the
+# same seed and renv-pinned package versions (confirmed: a real rerun once
+# produced one extra cluster). Rather than halting the whole pipeline on a
+# mismatch, label any unmapped cluster "Unidentified" and continue -- this
+# extends the map itself so every downstream lookup below just works
+# unchanged.
+unmapped_clusters <- setdiff(clusters_present, names(broad_lineage_map))
+if (length(unmapped_clusters) > 0) {
+  log_msg("WARNING: cluster(s) %s not in the hand-typed broad_lineage_map (likely",
+          paste(unmapped_clusters, collapse = ", "))
+  log_msg("  non-deterministic clustering vs. the reference run this map was built for)")
+  log_msg("  -- labeling as 'Unidentified' rather than halting.")
+  for (cl in unmapped_clusters) {
+    broad_lineage_map[[cl]] <- "Unidentified"
+    confidence_map[[cl]] <- "none"
+    key_markers_map[[cl]] <- NA_character_
+  }
+}
+
+# Opposite direction of the same problem: a cluster *number* the map has an
+# entry for might not exist at all in this run's clustering (e.g. the map
+# covers 0-23 but only 23 clusters formed). Left in, `table(obj$seurat_
+# clusters)[names(broad_lineage_map)]` below would silently produce an NA
+# n_cells row for it. Drop those stale entries so the output only ever
+# reflects clusters that are actually present.
+stale_clusters <- setdiff(names(broad_lineage_map), clusters_present)
+if (length(stale_clusters) > 0) {
+  log_msg("NOTE: cluster(s) %s from broad_lineage_map don't exist in this run's",
+          paste(stale_clusters, collapse = ", "))
+  log_msg("  clustering -- dropping them from the output rather than leaving stale rows.")
+  broad_lineage_map <- broad_lineage_map[setdiff(names(broad_lineage_map), stale_clusters)]
+  confidence_map <- confidence_map[setdiff(names(confidence_map), stale_clusters)]
+  key_markers_map <- key_markers_map[setdiff(names(key_markers_map), stale_clusters)]
+}
 
 obj$broad_lineage <- unname(broad_lineage_map[as.character(obj$seurat_clusters)])
 obj$annotation_confidence <- unname(confidence_map[as.character(obj$seurat_clusters)])
@@ -191,6 +227,7 @@ annotation_table <- data.frame(
   key_markers = key_markers_map,
   row.names = NULL
 )
+annotation_table <- annotation_table[order(as.integer(annotation_table$cluster)), ]
 write.csv(annotation_table, file.path(results_dir, "03_rna_broad_annotation.csv"), row.names = FALSE)
 log_msg("Saved results/03_rna_broad_annotation.csv")
 
@@ -211,7 +248,8 @@ lineage_colors <- c(
   "CD4 T" = "#4C78A8", "CD8 T" = "#72B7B2", "NK" = "#E45756",
   "B cell" = "#F58518", "Monocyte" = "#EECA3B", "DC" = "#BAB0AC",
   "MAIT" = "#B279A2", "HSPC" = "#000000", "Proliferating" = "#17BECF",
-  "gdT/NK" = "#54A24B", "ILC" = "#9C755F", "pDC" = "#8C564B"
+  "gdT/NK" = "#54A24B", "ILC" = "#9C755F", "pDC" = "#8C564B",
+  "Unidentified" = "#7F7F7F"
 )
 
 missing_colors <- setdiff(unique(df$broad_lineage), names(lineage_colors))

@@ -340,6 +340,14 @@ for (ln in lanes) {
   optimal_pK <- 0.01
   nExp_lane <- round(doublet_rate * ncol(obj_lane))
   log_msg("Lane %s: running doubletFinder (pK=%s, nExp=%d)...", ln, optimal_pK, nExp_lane)
+  # doubletFinder()'s only randomness is two plain sample() calls internally
+  # (confirmed by inspecting its source) -- it takes no seed argument itself
+  # and otherwise just consumes whatever position the single top-of-script
+  # set.seed(42) RNG stream happens to be at by the time this lane's turn
+  # comes up, which depends on exactly how many prior random draws happened
+  # in every earlier lane. Reseed fresh right here so each lane's doublet
+  # calls are reproducible on their own, independent of loop position.
+  set.seed(42)
   obj_lane <- doubletFinder(obj_lane, PCs = 1:10, pN = 0.25, pK = optimal_pK,
                              nExp = nExp_lane, sct = FALSE)
 
