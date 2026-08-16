@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 #
 # Run this master script to run the full CITE-seq pipeline, in order:
-#   01_rna_qc_filter.R      
-#   02_adt_qc_filter.R      
-#   03_rna_umap.R           
-#   04_adt_umap.R           
-#   05_wnn_integration.R    
+#   01_rna_qc_filter.R
+#   02_adt_qc_filter.R
+#   03_rna_umap.R
+#   04_adt_umap.R
+#   05_wnn_integration.R
+#   06_generate_report.R
 #
 # Usage:
 #   ./run_pipeline.sh
@@ -26,6 +27,7 @@ STEPS=(
   "03_rna_umap.R"
   "04_adt_umap.R"
   "05_wnn_integration.R"
+  "06_generate_report.R"
 )
 
 log()  { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$*"; }
@@ -157,3 +159,4 @@ pipeline_end=$(date +%s)
 total=$(( pipeline_end - pipeline_start ))
 log "Pipeline complete: all ${#STEPS[@]} steps finished in $(( total / 3600 ))h $(( (total % 3600) / 60 ))m $(( total % 60 ))s"
 log "Final checkpoint: results/05_wnn_seurat_object_detailed.rds"
+log "Report: report.html"
