@@ -1,10 +1,4 @@
 # Snakemake workflow for the CITE-seq pipeline.
-# Alternative to scripts/run_pipeline.sh -- wraps the same 5 scripts,
-# but gets Snakemake's DAG-based dependency tracking, partial re-runs,
-# and parallelism (rule rna_umap and rule adt_qc_filter/adt_umap don't
-# depend on each other -- both branch independently from rna_qc_filter's
-# doublet-filtered checkpoint, only merging back at wnn_integration --
-# and can run with --cores 2+).
 #
 # Usage:
 #   snakemake -n                                    # dry run
@@ -12,36 +6,6 @@
 #   snakemake --cores 2 --config conda_env=my_env_name
 #   snakemake --cores 2 --config rscript=/path/to/some/other/Rscript
 #
-# Auto-detects the same two package-source modes as run_pipeline.sh, and
-# for the same reason: Snakemake's shell commands run with cwd = the
-# project root by default, which has .Rprofile, so renv would otherwise
-# activate on every rule and (since renv/settings.json's
-# external.libraries is intentionally empty) hide a conda env's packages
-# entirely -- confirmed by actually hitting that exact failure once.
-#
-#   - a conda env is found (default name 'citeseq-pipeline', overridable
-#     with --config conda_env=..., since a given user's env doesn't have
-#     to be named that) via whatever `conda` is on PATH -- asks it for its
-#     own base dir with `conda info --base` rather than guessing
-#     install-dir names, so this works regardless of which conda
-#     distribution or install location/prefix is on this machine: each
-#     rule cd's into scripts/ first (no .Rprofile there), so renv never
-#     activates and packages come straight from that conda env's own
-#     Rscript -- no need to activate it yourself first, this points
-#     RSCRIPT at it directly.
-#   - no `conda` on PATH, or no matching env under its base: rules run
-#     from the project root instead (Snakemake's default), so renv's
-#     .Rprofile activates and packages come from renv/library/, i.e.
-#     whatever `Rscript -e 'renv::restore()'` installed there beforehand.
-#
-# Override the auto-detected Rscript directly with --config rscript=...
-# if needed (e.g. a conda env at a nonstandard path not findable via its
-# name at all) -- this only overrides which Rscript binary is used, not
-# which of the two cwd modes runs; that's still decided by whether the
-# conda env directory (whatever its name) was found.
-#
-# Data prerequisite (not automated here, same as run_pipeline.sh): the 6
-# raw GEO files must already be in data/ -- see README's "Source data".
 
 import os
 import shutil
@@ -49,13 +13,7 @@ import subprocess
 
 
 def _find_conda_env(name):
-    # Prefer asking whatever `conda` is already on PATH for its own base
-    # dir -- works for any conda distribution or install location/prefix.
-    # But Snakemake may be invoked without conda's shell hooks active (e.g.
-    # a non-interactive shell, or a wrapper that doesn't run `conda init`'s
-    # PATH additions), so fall back to the common install locations if
-    # `conda` isn't found on PATH -- same two-tier approach as
-    # run_pipeline.sh, kept consistent for the same reason.
+
     if shutil.which("conda") is not None:
         try:
             base = subprocess.run(
