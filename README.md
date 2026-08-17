@@ -50,6 +50,7 @@ reference/celltype_annotations.csv contains cell-type labels for the WNN UMAP cl
 | `03_rna_umap.R` | RNA UMAP |
 | `04_adt_umap.R` | ADT UMAP |
 | `05_wnn_integration.R` | WNN-based multimodal Integration |
+| `06_generate_report.R` | Generate report (html) |
 
 ### RNA QC
 
@@ -218,6 +219,7 @@ Rscript scripts/02_adt_qc_filter.R
 Rscript scripts/03_rna_umap.R
 Rscript scripts/04_adt_umap.R
 Rscript scripts/05_wnn_integration.R
+Rscript scripts/06_generate_report.R
 ```
 
 ### B. Snakemake
@@ -268,10 +270,10 @@ multiomics/
 │   ├── 01_rna_qc_filter_mito.csv
 │   ├── 01_rna_qc_filter_quantile.csv       
 │   ├── 01_rna_doublet_summary.csv          
-│   ├── 01_rna_qc_stats.csv                 # batch-effect Wilcoxon p-value + ratio
+│   ├── 01_rna_qc_stats.csv                 
 │   ├── 02_adt_qc_filter.csv                
 │   ├── 02_adt_qc_report_summary.png
-│   ├── 02_adt_qc_stats.csv                 # batch-effect Wilcoxon p-value + ratio
+│   ├── 02_adt_qc_stats.csv                 
 │   ├── 03_rna_cluster_markers.csv
 │   ├── 03_rna_broad_annotation.csv         
 │   ├── 03_rna_umap_broad_labels.png
@@ -291,8 +293,8 @@ multiomics/
     ├── 03_rna_umap.R           
     ├── 04_adt_umap.R           
     ├── 05_wnn_integration.R    
-    ├── 06_generate_report.R      # auto-generates report.html
-    └── report_template.html      # template 06_generate_report.R fills in
+    ├── 06_generate_report.R      
+    └── report_template.html      
 ```
 
 
@@ -300,8 +302,8 @@ multiomics/
 
 `results/` contains the following files:
 
-- **`01_rna_*`** — RNA cell/gene/mitochondria/quantile filter (`.csv`), doublet detection filter (`.csv`), and RNA QC figure (`.png`)
-- **`02_adt_*`** — ADT cell/antibody filter (`.csv`) and ADT QC figure (`.png`)
+- **`01_rna_*`** — RNA cell/gene/mitochondria/quantile filter and statistics (`.csv`), doublet detection filter (`.csv`), and RNA QC figure (`.png`)
+- **`02_adt_*`** — ADT cell/antibody filter and statistics (`.csv`) and ADT QC figure (`.png`)
 - **`03_rna_*`** — RNA cluster markers (`.csv`), broad cluster annotation (`.csv`), and RNA UMAP figure (`.png`)
 - **`04_adt_*`** — ADT cluster markers (`.csv`), broad cluster annotation (`.csv`), and ADT UMAP figure (`.png`)
 - **`05_wnn_*`** — RNA and ADT cluster markers (`.csv`), broad and detailed cluster annotation (`.csv`), and WNN UMAP figures (`.png`)
