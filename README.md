@@ -191,6 +191,9 @@ Key package versions:
                            ▼
                     WNN Integration
    (FindMultiModalNeighbors on RNA PCA + ADT PCA, UMAP)
+                           │
+                           ▼
+                   Generate report.html
 ```
 
 
