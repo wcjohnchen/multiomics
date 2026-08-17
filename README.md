@@ -40,7 +40,7 @@ reference/celltype_annotations.csv contains cell-type labels for the WNN UMAP cl
 
 ## 2. Computational Methods
 
-`scripts/` contains the following files:
+`scripts/` contains the following scripts:
 
 | Script | Description |
 |---|---|
