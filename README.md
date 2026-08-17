@@ -268,8 +268,10 @@ multiomics/
 │   ├── 01_rna_qc_filter_mito.csv
 │   ├── 01_rna_qc_filter_quantile.csv       
 │   ├── 01_rna_doublet_summary.csv          
+│   ├── 01_rna_qc_stats.csv                 # batch-effect Wilcoxon p-value + ratio
 │   ├── 02_adt_qc_filter.csv                
 │   ├── 02_adt_qc_report_summary.png
+│   ├── 02_adt_qc_stats.csv                 # batch-effect Wilcoxon p-value + ratio
 │   ├── 03_rna_cluster_markers.csv
 │   ├── 03_rna_broad_annotation.csv         
 │   ├── 03_rna_umap_broad_labels.png
@@ -280,15 +282,17 @@ multiomics/
 │   ├── 05_wnn_cluster_markers_ADT.csv
 │   ├── 05_wnn_broad_annotation.csv
 │   ├── 05_wnn_umap_broad_labels.png
-│   ├── 05_wnn_l1_annotation.csv
-│   └── 05_wnn_umap_l1_labels.png
+│   ├── 05_wnn_detailed_annotation.csv
+│   └── 05_wnn_umap_detailed_labels.png
 └── scripts/
     ├── run_pipeline.sh            (master script)
     ├── 01_rna_qc_filter.R      
     ├── 02_adt_qc_filter.R      
     ├── 03_rna_umap.R           
     ├── 04_adt_umap.R           
-    └── 05_wnn_integration.R    
+    ├── 05_wnn_integration.R    
+    ├── 06_generate_report.R      # auto-generates report.html
+    └── report_template.html      # template 06_generate_report.R fills in
 ```
 
 
