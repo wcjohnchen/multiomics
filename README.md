@@ -318,7 +318,7 @@ Code was developed with assistance from Claude, an AI coding assistant,
 based on author-defined step-by-step specifications, analytical
 objectives, and methodological decisions. The generated code was
 iteratively refined, reviewed by the author, and validated by
-comparing major results reported in the original publication.
+comparing major results reported in the original publication..
 
 
 ## 9. References
